@@ -255,24 +255,37 @@ input[type=file]{display:none}
           <select id="dash-wsel" onchange="loadWeek(this.value)"><option value="">— select —</option></select>
         </div>
       </div>
-      <div class="mrow">
+      <div class="mrow" style="grid-template-columns:repeat(6,minmax(0,1fr))">
         <div class="mc"><div class="ml">Locums logged</div><div class="mv" id="m-total">—</div></div>
+        <div class="mc"><div class="ml">No timesheet</div><div class="mv red" id="m-nots">—</div></div>
         <div class="mc"><div class="ml">Zero activity</div><div class="mv red" id="m-zero">—</div></div>
+        <div class="mc"><div class="ml">Rota breach</div><div class="mv amber" id="m-breach">—</div></div>
         <div class="mc"><div class="ml">Severe (&lt;20%)</div><div class="mv amber" id="m-severe">—</div></div>
-        <div class="mc"><div class="ml">Timing concerns</div><div class="mv blue" id="m-concern">—</div></div>
         <div class="mc"><div class="ml">Median orders/hr</div><div class="mv green" id="m-median">—</div></div>
       </div>
       <div class="sec">
+        <div class="sech"><div class="sect">⛔ No Timesheet — active but no hours logged</div></div>
+        <div class="tw"><table><thead><tr><th>Name</th><th class="r">Complex orders</th><th class="r">Simple orders</th><th class="r">Rota breach orders</th><th>Action</th></tr></thead><tbody id="tb-nots"></tbody></table></div>
+      </div>
+      <div class="sec">
         <div class="sech"><div class="sect">🔴 Zero Activity — no clinical events during logged hours</div></div>
-        <div class="tw"><table><thead><tr><th>Name</th><th class="r">TS Hrs</th><th class="r">Orders</th><th class="r">Expected</th><th>Status</th><th>Action</th></tr></thead><tbody id="tb-zero"></tbody></table></div>
+        <div class="tw"><table><thead><tr><th>Name</th><th class="r">TS Hrs</th><th class="r">Dominant type</th><th class="r">Expected</th><th>Action</th></tr></thead><tbody id="tb-zero"></tbody></table></div>
       </div>
       <div class="sec">
-        <div class="sech"><div class="sect">🟡 Severe Discrepancy — orders &lt;20% of expected</div></div>
-        <div class="tw"><table><thead><tr><th>Name</th><th class="r">TS Hrs</th><th class="r">Orders</th><th class="r">Expected</th><th>Rate</th><th>Action</th></tr></thead><tbody id="tb-severe"></tbody></table></div>
+        <div class="sech"><div class="sect">🚨 Rota Breach — working on order types outside their rota</div></div>
+        <div class="tw"><table><thead><tr><th>Name</th><th class="r">Breach orders</th><th class="r">Breach types</th><th class="r">Rota orders</th><th>Action</th></tr></thead><tbody id="tb-breach"></tbody></table></div>
       </div>
       <div class="sec">
-        <div class="sech"><div class="sect">🔵 Timing Concerns — consistent late starts / early finishes</div></div>
-        <div class="tw"><table><thead><tr><th>Name</th><th class="r">TS Hrs</th><th class="r">Orders</th><th class="r">% Expected</th><th>Action</th></tr></thead><tbody id="tb-concern"></tbody></table></div>
+        <div class="sech"><div class="sect">🟡 Severe Discrepancy — orders &lt;20% of expected rate</div></div>
+        <div class="tw"><table><thead><tr><th>Name</th><th class="r">TS Hrs</th><th class="r">Dominant type</th><th class="r">Orders</th><th class="r">Expected</th><th>Rate</th><th>Action</th></tr></thead><tbody id="tb-severe"></tbody></table></div>
+      </div>
+      <div class="sec">
+        <div class="sech"><div class="sect">🔵 Concern — orders 20–60% of expected</div></div>
+        <div class="tw"><table><thead><tr><th>Name</th><th class="r">TS Hrs</th><th class="r">Dominant type</th><th class="r">Orders</th><th class="r">% Expected</th><th>Action</th></tr></thead><tbody id="tb-concern"></tbody></table></div>
+      </div>
+      <div class="sec">
+        <div class="sech"><div class="sect">⏰ Timing Concerns — clocked in/out doesn't match activity window</div></div>
+        <div class="tw"><table><thead><tr><th>Name</th><th>Timesheet window</th><th>Activity window</th><th>Late start</th><th>Early finish</th><th>Action</th></tr></thead><tbody id="tb-timing"></tbody></table></div>
       </div>
     </div>
 
@@ -356,9 +369,11 @@ input[type=file]{display:none}
           <input type="file" id="ts-file" accept=".csv" onchange="handleFile(event,'timesheet')">
         </div>
       </div>
-      <div class="fr2" style="max-width:460px">
+      <div class="fr2" style="max-width:700px">
         <div><label>Week label (e.g. "13–19 Apr 2026")</label><input type="text" id="imp-label" placeholder="13–19 Apr 2026"></div>
         <div><label>Week ID (e.g. "2026-W16")</label><input type="text" id="imp-id" placeholder="2026-W16"></div>
+        <div><label>Provider</label><select id="imp-provider"><option value="Your World">Your World</option><option value="GPDQ">GPDQ</option></select></div>
+        <div style="display:flex;align-items:flex-end"><div style="font-size:11px;color:var(--mu);line-height:1.6"><strong style="color:var(--tx)">Order rates:</strong><br>Complex / Periodic: 6/hr<br>Simple repeats: 24/hr</div></div>
       </div>
       <div class="astatus" id="imp-status"><div id="imp-lines"></div></div>
       <div style="display:flex;gap:12px;margin-top:8px">
@@ -425,15 +440,14 @@ input[type=file]{display:none}
 <script>
 
 // ─── FIREBASE CONFIG — replace these with your own values ─────────────────────
-const firebaseConfig = {
-  apiKey: "AIzaSyCeBwCdFOqhHDGHkb4GAcEJJiXAomeanKw",
-  authDomain: "medexpress-locum-audit.firebaseapp.com",
-  databaseURL: "https://medexpress-locum-audit-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "medexpress-locum-audit",
-  storageBucket: "medexpress-locum-audit.firebasestorage.app",
-  messagingSenderId: "397202189507",
-  appId: "1:397202189507:web:2a95b5066f65284a3e0676",
-  measurementId: "G-ETSY0DHDGF"
+var firebaseConfig = {
+  apiKey:            "REPLACE_WITH_YOUR_API_KEY",
+  authDomain:        "REPLACE_WITH_YOUR_AUTH_DOMAIN",
+  databaseURL:       "REPLACE_WITH_YOUR_DATABASE_URL",
+  projectId:         "REPLACE_WITH_YOUR_PROJECT_ID",
+  storageBucket:     "REPLACE_WITH_YOUR_STORAGE_BUCKET",
+  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
+  appId:             "REPLACE_WITH_YOUR_APP_ID"
 };
 
 firebase.initializeApp(firebaseConfig);
@@ -575,37 +589,111 @@ function loadWeek(weekId) {
     document.getElementById('dash-sub').textContent = week.label || weekId;
     document.getElementById('dash-wsel').value = weekId;
     var locums = Object.values(week.locums || {});
+    var nots   = locums.filter(function(l){ return l.flag==='no_timesheet'; });
     var zero   = locums.filter(function(l){ return l.flag==='zero'; });
+    var breach = locums.filter(function(l){ return l.flag==='breach'; });
     var severe = locums.filter(function(l){ return l.flag==='severe'; });
     var concern= locums.filter(function(l){ return l.flag==='concern'; });
-    document.getElementById('m-total').textContent   = locums.length;
-    document.getElementById('m-zero').textContent    = zero.length;
-    document.getElementById('m-severe').textContent  = severe.length;
-    document.getElementById('m-concern').textContent = concern.length;
-    var active = locums.filter(function(l){ return l.orders>0&&l.ts_hrs>0; });
-    var ephs = active.map(function(l){ return l.orders/l.ts_hrs; }).sort(function(a,b){return a-b;});
+    document.getElementById('m-total').textContent  = locums.length;
+    document.getElementById('m-nots').textContent   = nots.length;
+    document.getElementById('m-zero').textContent   = zero.length;
+    document.getElementById('m-breach').textContent = breach.length;
+    document.getElementById('m-severe').textContent = severe.length;
+    var active = locums.filter(function(l){ return (l.total_rota||l.orders||0)>0 && l.ts_hrs>0; });
+    var ephs   = active.map(function(l){ return (l.total_rota||l.orders||0)/l.ts_hrs; }).sort(function(a,b){return a-b;});
     document.getElementById('m-median').textContent = ephs.length ? ephs[Math.floor(ephs.length/2)].toFixed(1) : '—';
     var dl = document.getElementById('locum-dl');
     dl.innerHTML = locums.map(function(l){ return '<option value="'+esc(l.name)+'">'; }).join('');
-    fillTable('tb-zero',   zero,   false, false);
-    fillTable('tb-severe', severe, true,  false);
-    fillTable('tb-concern',concern,false, true);
+    var timing = locums.filter(function(l){ return l.flag==='timing'; });
+    fillNoTs('tb-nots', nots);
+    fillZero('tb-zero', zero);
+    fillBreach('tb-breach', breach);
+    fillRated('tb-severe', severe, true);
+    fillRated('tb-concern', concern, false);
+    fillTiming('tb-timing', timing);
   });
 }
 
-function fillTable(id, rows, showRate, showPct) {
+function domBadge(d) {
+  return d==='complex'
+    ? '<span class="badge ba">Complex (6/hr)</span>'
+    : d==='simple'
+    ? '<span class="badge bb">Simple (24/hr)</span>'
+    : '<span class="badge bm">—</span>';
+}
+
+function fbBtn(name) {
+  return '<button class="btn btnxs" onclick="openFbModal(''+esc(name)+'')">Log feedback</button>';
+}
+
+function fillNoTs(id, rows) {
   var tbody = document.getElementById(id);
-  if (!rows.length) {
-    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:20px">None this week</td></tr>';
-    return;
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--mu);padding:20px">None this week</td></tr>'; return; }
+  tbody.innerHTML = rows.sort(function(a,b){return (b.breach||0)-(a.breach||0);}).map(function(l){
+    var breachBadge = (l.breach||0)>0 ? ' <span class="badge br">'+l.breach+' breach orders</span>' : '';
+    return '<tr><td>'+esc(l.name)+breachBadge+'</td><td class="r">'+(l.complex||0)+'</td><td class="r">'+(l.simple||0)+'</td><td class="r"><span class="badge br">'+(l.breach||0)+'</span></td><td>'+fbBtn(l.name)+'</td></tr>';
+  }).join('');
+}
+
+function fillZero(id, rows) {
+  var tbody = document.getElementById(id);
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--mu);padding:20px">None this week</td></tr>'; return; }
+  tbody.innerHTML = rows.sort(function(a,b){return b.ts_hrs-a.ts_hrs;}).map(function(l){
+    return '<tr><td>'+esc(l.name)+'</td><td class="r">'+l.ts_hrs.toFixed(1)+'</td><td>'+domBadge(l.dominant)+'</td><td class="r dim">'+(l.expected||0)+'</td><td>'+fbBtn(l.name)+'</td></tr>';
+  }).join('');
+}
+
+function fillBreach(id, rows) {
+  var tbody = document.getElementById(id);
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--mu);padding:20px">None this week</td></tr>'; return; }
+  tbody.innerHTML = rows.sort(function(a,b){return (b.breach||0)-(a.breach||0);}).map(function(l){
+    var btypes = (l.breach_types||[]).join(', ') || '—';
+    return '<tr><td>'+esc(l.name)+'</td><td class="r"><span class="badge br">'+(l.breach||0)+'</span></td><td style="font-size:11px;color:var(--mu)">'+esc(btypes)+'</td><td class="r">'+(l.total_rota||0)+'</td><td>'+fbBtn(l.name)+'</td></tr>';
+  }).join('');
+}
+
+function fillRated(id, rows, isSevere) {
+  var tbody = document.getElementById(id);
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:20px">None this week</td></tr>'; return; }
+  tbody.innerHTML = rows.sort(function(a,b){return a.pct-b.pct;}).map(function(l){
+    var rateCell = isSevere ? '<td>'+rateBar(l.pct)+'</td>' : '<td class="r">'+l.pct+'%</td>';
+    return '<tr><td>'+esc(l.name)+'</td><td class="r">'+l.ts_hrs.toFixed(1)+'</td><td>'+domBadge(l.dominant)+'</td><td class="r">'+(l.total_rota||l.orders||0)+'</td><td class="r dim">'+(l.expected||0)+'</td>'+rateCell+'<td>'+fbBtn(l.name)+'</td></tr>';
+  }).join('');
+}
+
+function fillTiming(id, rows) {
+  var tbody = document.getElementById(id);
+  if (!rows.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:20px">None this week</td></tr>'; return; }
+
+  function timePill(time, label, isLate) {
+    if (!time) return '<span class="badge bm">—</span>';
+    var cls = isLate ? 'br' : 'bg';
+    return '<span style="font-variant-numeric:tabular-nums;font-size:12px;color:var(--tx)">' + time + '</span>';
   }
-  tbody.innerHTML = rows.sort(function(a,b){return a.pct-b.pct;}).map(function(l) {
-    var rate = showRate ? '<td>' + rateBar(l.pct) + '</td>' : '';
-    var pct  = showPct  ? '<td class="r">' + l.pct + '%</td>' : '';
-    return '<tr><td>' + esc(l.name) + '</td><td class="r">' + l.ts_hrs.toFixed(1) + '</td>' +
-      '<td class="r">' + l.orders + '</td><td class="r dim">' + l.expected + '</td>' +
-      rate + pct +
-      '<td><button class="btn btnxs" onclick="openFbModal(\'' + esc(l.name) + '\')">Log feedback</button></td></tr>';
+
+  function gapBadge(mins, isStart) {
+    if (mins === null || mins === undefined || mins <= 0) return '<span style="color:var(--mu);font-size:11px">—</span>';
+    var cls = mins > 90 ? 'br' : mins > 45 ? 'ba' : 'bm';
+    var label = isStart ? '+' + Math.round(mins) + ' min late' : '+' + Math.round(mins) + ' min early';
+    return '<span class="badge ' + cls + '">' + label + '</span>';
+  }
+
+  tbody.innerHTML = rows.sort(function(a,b){
+    var aGap = Math.max(a.gap_start||0, a.gap_end||0);
+    var bGap = Math.max(b.gap_start||0, b.gap_end||0);
+    return bGap - aGap;
+  }).map(function(l){
+    var tsWindow  = (l.ts_start && l.ts_end)    ? l.ts_start + ' – ' + l.ts_end   : '—';
+    var actWindow = (l.first_act && l.last_act) ? l.first_act + ' – ' + l.last_act : '—';
+    var lateStart = gapBadge(l.gap_start, true);
+    var earlyEnd  = gapBadge(l.gap_end,   false);
+    return '<tr>' +
+      '<td>' + esc(l.name) + '</td>' +
+      '<td style="font-variant-numeric:tabular-nums;font-size:12px">' + tsWindow + '</td>' +
+      '<td style="font-variant-numeric:tabular-nums;font-size:12px;color:var(--ac2)">' + actWindow + '</td>' +
+      '<td>' + lateStart + '</td>' +
+      '<td>' + earlyEnd  + '</td>' +
+      '<td>' + fbBtn(l.name) + '</td></tr>';
   }).join('');
 }
 
@@ -882,6 +970,7 @@ function runImport() {
   if (!activityCSV || !timesheetCSV) { showToast('Please load both CSV files first','error'); return; }
   var weekId    = document.getElementById('imp-id').value.trim();
   var weekLabel = document.getElementById('imp-label').value.trim();
+  var provider  = document.getElementById('imp-provider').value.trim() || 'Your World';
   if (!weekId || !weekLabel) { showToast('Please enter week ID and label','error'); return; }
 
   var statusDiv   = document.getElementById('imp-status');
@@ -902,6 +991,16 @@ function runImport() {
 
   addSt('Running analysis…','wait');
 
+  // ── Order type classification ──────────────────────────────────────────────
+  var TYPE_COL = 'Order Classifications with AP - Order → RETAINED_DOSE_TYPE';
+  var COMPLEX_TYPES = {'Complex Repeats':1, 'Periodic Reviews':1};
+  var SIMPLE_TYPES  = {'Simple Repeats':1};
+
+  function classifyType(t) {
+    return COMPLEX_TYPES[t] ? 'complex' : SIMPLE_TYPES[t] ? 'simple' : 'breach';
+  }
+
+  // ── Name normalisation ─────────────────────────────────────────────────────
   var NAME_MAP = {
     'abbas al jabari':'Abbas Aljabari','hishma dhruv parmar':'Hishma Dhruvparmar',
     'shezana akhtar azam':'Shezana Azam','christina eboh':'Christiana Eboh',
@@ -912,20 +1011,29 @@ function runImport() {
     return NAME_MAP[n] || name.trim().split(' ').map(function(p){ return p.charAt(0).toUpperCase()+p.slice(1); }).join(' ');
   }
 
+  // ── Parse activity events with order type ──────────────────────────────────
   var actEvents = actRows.map(function(r) {
-    var tsStr = r['Date Time: Minute'] || r['date_time_minute'] || '';
+    var tsStr = r['Date Time: Minute'] || '';
     var ts = null;
     var m = tsStr.match(/(\w+ \d+, \d+), (\d+:\d+)/);
     if (m) ts = new Date(m[1]+' '+m[2]);
-    var email = (r['Email']||r['email']||'').toLowerCase().trim();
-    return {ts:ts, actName:emailToName(email), orderId:r['Order \u2192 Order ID URL']||r['order_id']||'', count:parseInt(r['Count']||'1')||1};
+    var email   = (r['Email']||'').toLowerCase().trim();
+    var rawType = r[TYPE_COL] || r['Order Classifications with AP - Order → RETAINED_DOSE_TYPE'] || '';
+    return {
+      ts: ts,
+      actName: emailToName(email),
+      orderId: r['Order → Order ID URL'] || '',
+      orderType: rawType,
+      category: classifyType(rawType)
+    };
   }).filter(function(r){ return r.ts && r.actName; });
 
+  // ── Parse timesheet sessions, collapse to per-person total hours ───────────
   var tsMap = {};
   tsRows.forEach(function(r) {
-    var member = r['Member']||r['member']||'';
-    var start  = new Date(r['Started']||r['started']||'');
-    var stop   = new Date(r['Stopped']||r['stopped']||'');
+    var member = r['Member']||'';
+    var start  = new Date(r['Started']||'');
+    var stop   = new Date(r['Stopped']||'');
     var manual = (r['Manual']||'')==='100%';
     if (isNaN(start)||isNaN(stop)) return;
     var actName = mapName(member);
@@ -939,41 +1047,150 @@ function runImport() {
     }
   });
 
+  // ── Find people with activity but NO timesheet ─────────────────────────────
+  var allActNames = {};
+  actEvents.forEach(function(e){ allActNames[e.actName]=1; });
+
+  // ── Helper: format Date to HH:MM string in UK local time ────────────────────
+  function fmtTime(d) {
+    if (!d) return null;
+    return d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit', timeZone:'Europe/London'});
+  }
+
+  // ── Build results for timesheeted people ──────────────────────────────────
   var results = {};
+
   Object.entries(tsMap).forEach(function(pair) {
     var actName=pair[0]; var days=pair[1];
-    var totalHrs=0, totalOrders=0, totalExp=0;
+    var totalHrs=0;
+    var complexOrders={}, simpleOrders={}, breachOrders={};
+    var tsStart=null, tsEnd=null;
+
     Object.values(days).forEach(function(d) {
       var hrs=(d.stop-d.start)/3600000;
-      totalHrs+=hrs; totalExp+=Math.round(hrs*15);
-      var dayEvts = actEvents.filter(function(e){ return e.actName===actName && e.ts>=d.start && e.ts<=d.stop; });
-      var uOrders = {}; dayEvts.forEach(function(e){ if(e.orderId) uOrders[e.orderId]=1; });
-      totalOrders+=Object.keys(uOrders).length;
+      totalHrs+=hrs;
+      if (!tsStart || d.start<tsStart) tsStart=d.start;
+      if (!tsEnd   || d.stop>tsEnd)    tsEnd=d.stop;
+
+      var dayEvts = actEvents.filter(function(e){
+        return e.actName===actName && e.ts>=d.start && e.ts<=d.stop;
+      });
+      dayEvts.forEach(function(e){
+        if (!e.orderId) return;
+        if (e.category==='complex') complexOrders[e.orderId]=1;
+        else if (e.category==='simple') simpleOrders[e.orderId]=1;
+        else breachOrders[e.orderId]=(breachOrders[e.orderId]||0), breachOrders[e.orderId]=e.orderType;
+      });
     });
-    var pct  = totalExp>0 ? Math.round(totalOrders/totalExp*100) : 0;
-    var flag = totalOrders===0?'zero':pct<20?'severe':pct<60?'concern':'ok';
+
+    var cCount = Object.keys(complexOrders).length;
+    var sCount = Object.keys(simpleOrders).length;
+    var bCount = Object.keys(breachOrders).length;
+    var totalRota = cCount + sCount;
+    var dominant  = cCount >= sCount ? 'complex' : 'simple';
+    var rate      = dominant==='complex' ? 6 : 24;
+    var expected  = Math.round(totalHrs * rate);
+    var pct       = expected>0 ? Math.round(totalRota/expected*100) : 0;
+
+    // Timing
+    var firstAct=null, lastAct=null;
+    actEvents.forEach(function(e){
+      if (e.actName===actName) {
+        if (!firstAct||e.ts<firstAct) firstAct=e.ts;
+        if (!lastAct ||e.ts>lastAct)  lastAct=e.ts;
+      }
+    });
+    var gapStart = (tsStart&&firstAct) ? Math.round((firstAct-tsStart)/60000) : null;
+    var gapEnd   = (tsEnd&&lastAct)    ? Math.round((tsEnd-lastAct)/60000)    : null;
+
+    // Flag
+    var flag='ok';
+    if (bCount>0)       flag='breach';
+    if (totalRota===0)  flag='zero';
+    if (pct>0&&pct<20)  flag='severe';
+    if (pct>=20&&pct<60) flag='concern';
+    if (flag==='ok' && ((gapStart&&gapStart>45)||(gapEnd&&gapEnd>45))) flag='timing';
+    // zero overrides timing for display
+    if (totalRota===0&&flag!='breach') flag='zero';
+
     var mname = Object.values(days)[0].member;
-    results[actName.replace(/[.#$\/\[\]]/g,'_')] = {name:mname, ts_hrs:Math.round(totalHrs*10)/10, orders:totalOrders, expected:totalExp, pct:pct, flag:flag};
+    // Collect breach types
+    var btSet={};
+    actEvents.filter(function(e){ return e.actName===actName && e.category==='breach'; }).forEach(function(e){ btSet[e.orderType]=1; });
+
+    results[actName.replace(/[.#$\/\[\]]/g,'_')] = {
+      name: mname,
+      provider: provider,
+      ts_hrs: Math.round(totalHrs*10)/10,
+      complex: cCount, simple: sCount, breach: bCount,
+      total_rota: totalRota,
+      dominant: dominant,
+      expected: expected, pct: pct,
+      breach_types: Object.keys(btSet),
+      gap_start: gapStart, gap_end: gapEnd,
+      ts_start: tsStart ? fmtTime(tsStart) : null,
+      ts_end:   tsEnd   ? fmtTime(tsEnd)   : null,
+      first_act: firstAct ? fmtTime(firstAct) : null,
+      last_act:  lastAct  ? fmtTime(lastAct)  : null,
+      flag: flag
+    };
+  });
+
+  // ── Add no-timesheet people ────────────────────────────────────────────────
+  Object.keys(allActNames).forEach(function(actName) {
+    var key = actName.replace(/[.#$\/\[\]]/g,'_');
+    if (results[key]) return; // already processed
+    var cO={},sO={},bO={};
+    actEvents.filter(function(e){ return e.actName===actName; }).forEach(function(e){
+      if (!e.orderId) return;
+      if (e.category==='complex') cO[e.orderId]=1;
+      else if (e.category==='simple') sO[e.orderId]=1;
+      else bO[e.orderId]=1;
+    });
+    var btSet={};
+    actEvents.filter(function(e){ return e.actName===actName&&e.category==='breach'; }).forEach(function(e){ btSet[e.orderType]=1; });
+    results[key] = {
+      name: actName,
+      provider: provider,
+      ts_hrs: 0,
+      complex: Object.keys(cO).length,
+      simple:  Object.keys(sO).length,
+      breach:  Object.keys(bO).length,
+      total_rota: Object.keys(cO).length + Object.keys(sO).length,
+      dominant: 'complex',
+      expected: 0, pct: 0,
+      breach_types: Object.keys(btSet),
+      gap_start: null, gap_end: null,
+      ts_start: null, ts_end: null,
+      first_act: null, last_act: null,
+      flag: 'no_timesheet'
+    };
   });
 
   var count  = Object.keys(results).length;
+  var notsC  = Object.values(results).filter(function(r){return r.flag==='no_timesheet';}).length;
   var zeroC  = Object.values(results).filter(function(r){return r.flag==='zero';}).length;
+  var brC    = Object.values(results).filter(function(r){return r.flag==='breach';}).length;
   var sevC   = Object.values(results).filter(function(r){return r.flag==='severe';}).length;
   addSt('Analysis complete: '+count+' locums processed','ok');
-  addSt('Flags: '+zeroC+' zero activity, '+sevC+' severe discrepancy',(zeroC+sevC)>0?'warn':'ok');
+  addSt('Flags: '+notsC+' no timesheet, '+zeroC+' zero activity, '+brC+' rota breach, '+sevC+' severe',(notsC+zeroC+brC+sevC)>0?'warn':'ok');
   addSt('Saving to Firebase…','wait');
 
-  db.ref('weeks/'+weekId).set({label:weekLabel, importedAt:Date.now(), locums:results}, function() {
+  db.ref('weeks/'+weekId).set({label:weekLabel, provider:provider, importedAt:Date.now(), locums:results}, function() {
     addSt('Saved successfully!','ok');
     showToast('Week '+weekLabel+' imported — '+count+' locums','success');
-    loadWeeks();
-    loadWeek(weekId);
-    loadPerformers(weekId);
-    var preview = Object.values(results).sort(function(a,b){return a.pct-b.pct;}).slice(0,10);
+    loadWeeks(); loadWeek(weekId); loadPerformers(weekId);
+    var preview = Object.values(results)
+      .filter(function(r){ return r.flag==='no_timesheet'||r.flag==='zero'||r.flag==='breach'||r.flag==='severe'; })
+      .sort(function(a,b){ var fo={no_timesheet:0,zero:1,breach:2,severe:3}; return (fo[a.flag]||9)-(fo[b.flag]||9); })
+      .slice(0,12);
     document.getElementById('imp-preview').innerHTML =
-      '<div class="sech" style="margin-bottom:12px"><div class="sect">Preview — top 10 flagged</div></div>' +
-      '<div class="tw"><table><thead><tr><th>Name</th><th class="r">TS hrs</th><th class="r">Orders</th><th class="r">Expected</th><th>Rate</th></tr></thead><tbody>' +
-      preview.map(function(r){ return '<tr><td>'+esc(r.name)+'</td><td class="r">'+r.ts_hrs+'</td><td class="r">'+r.orders+'</td><td class="r dim">'+r.expected+'</td><td>'+rateBar(r.pct)+'</td></tr>'; }).join('') +
+      '<div class="sech" style="margin-bottom:12px"><div class="sect">Preview — flagged locums</div></div>'+
+      '<div class="tw"><table><thead><tr><th>Name</th><th>Flag</th><th class="r">TS hrs</th><th>Dominant</th><th class="r">Rota orders</th><th class="r">Expected</th><th>Rate</th></tr></thead><tbody>'+
+      preview.map(function(r){
+        var fb = {no_timesheet:'<span class="badge br">No timesheet</span>',zero:'<span class="badge br">Zero activity</span>',breach:'<span class="badge ba">Rota breach</span>',severe:'<span class="badge ba">Severe</span>'};
+        return '<tr><td>'+esc(r.name)+'</td><td>'+(fb[r.flag]||'')+'</td><td class="r">'+r.ts_hrs+'</td><td>'+domBadge(r.dominant)+'</td><td class="r">'+(r.total_rota||0)+'</td><td class="r dim">'+r.expected+'</td><td>'+rateBar(r.pct)+'</td></tr>';
+      }).join('')+
       '</tbody></table></div>';
   });
 }
