@@ -450,9 +450,21 @@ var firebaseConfig = {
   appId:             "REPLACE_WITH_YOUR_APP_ID"
 };
 
-firebase.initializeApp(firebaseConfig);
-var db = firebase.database();
-var auth = firebase.auth();
+var db, auth;
+try {
+  firebase.initializeApp(firebaseConfig);
+  db   = firebase.database();
+  auth = firebase.auth();
+} catch(e) {
+  // Show the error on the login screen so it's visible
+  document.addEventListener('DOMContentLoaded', function() {
+    var errEl = document.getElementById('login-error');
+    if (errEl) {
+      errEl.textContent = 'Firebase config error: ' + e.message + '. Check your firebaseConfig values.';
+      errEl.classList.add('show');
+    }
+  });
+}
 
 // ─── GLOBAL STATE ─────────────────────────────────────────────────────────────
 var currentUser   = 'Titi';
@@ -1359,6 +1371,11 @@ function doLogin() {
   var password = document.getElementById('login-password').value;
   var btn      = document.getElementById('login-btn');
   var errEl    = document.getElementById('login-error');
+  if (!auth) {
+    errEl.textContent = 'Firebase not initialised — check your firebaseConfig values in the HTML file.';
+    errEl.classList.add('show');
+    return;
+  }
   if (!email || !password) {
     errEl.textContent = 'Please enter your email and password.';
     errEl.classList.add('show');
@@ -1386,7 +1403,7 @@ function doLogout() {
   auth.signOut();
 }
 
-auth.onAuthStateChanged(function(user) {
+if (auth) { auth.onAuthStateChanged(function(user) {
   if (user) {
     // Logged in — show app, hide login screen
     document.getElementById('login-screen').classList.add('hidden');
@@ -1417,7 +1434,7 @@ auth.onAuthStateChanged(function(user) {
     var btn = document.getElementById('login-btn');
     if (btn) { btn.disabled = false; btn.textContent = 'Sign in'; }
   }
-});
+}); }
 
 </script>
 </body>
