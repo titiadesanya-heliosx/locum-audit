@@ -6,25 +6,52 @@
 <title>Locum Audit Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,400;0,600;1,300&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0f0f0f;--sf:#181818;--sf2:#212121;--bd:rgba(255,255,255,0.08);--bd2:rgba(255,255,255,0.14);--tx:#f0ede8;--mu:#888880;--ac:#e8d5a3;--ac2:#c4a96d;--re:#e05252;--re-bg:rgba(224,82,82,0.1);--re-b:rgba(224,82,82,0.25);--am:#d4903a;--am-bg:rgba(212,144,58,0.1);--am-b:rgba(212,144,58,0.25);--bl:#5b9bd5;--bl-bg:rgba(91,155,213,0.1);--bl-b:rgba(91,155,213,0.25);--gr:#5daa7a;--gr-bg:rgba(93,170,122,0.1);--gr-b:rgba(93,170,122,0.25);--fd:'Fraunces',Georgia,serif;--fm:'DM Mono','Courier New',monospace;--r:6px}
+:root{
+--bg:#f0f4fa;
+--sf:#ffffff;
+--sf2:#e8eef8;
+--bd:rgba(30,90,200,0.10);
+--bd2:rgba(30,90,200,0.18);
+--tx:#0d1a33;
+--mu:#5a6e94;
+--ac:#1a6fe8;
+--ac2:#1259c7;
+--re:#d42b2b;
+--re-bg:rgba(212,43,43,0.08);
+--re-b:rgba(212,43,43,0.22);
+--am:#b86b00;
+--am-bg:rgba(184,107,0,0.08);
+--am-b:rgba(184,107,0,0.22);
+--bl:#0e7fd4;
+--bl-bg:rgba(14,127,212,0.08);
+--bl-b:rgba(14,127,212,0.22);
+--gr:#0a8a5c;
+--gr-bg:rgba(10,138,92,0.08);
+--gr-b:rgba(10,138,92,0.22);
+--pu:#6234c4;
+--pu-bg:rgba(98,52,196,0.08);
+--pu-b:rgba(98,52,196,0.22);
+--fd:'Fraunces',Georgia,serif;
+--fm:'DM Mono','Courier New',monospace;
+--r:6px}
 *{box-sizing:border-box;margin:0;padding:0}
 body{background:var(--bg);color:var(--tx);font-family:var(--fm);font-size:13px;min-height:100vh;line-height:1.5}
 .app{display:flex;min-height:100vh}
 .sidebar{width:220px;min-width:220px;background:var(--sf);border-right:1px solid var(--bd);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100}
 .slogo{padding:24px 20px 20px;border-bottom:1px solid var(--bd)}
-.slogo-t{font-family:var(--fd);font-size:17px;font-weight:600;color:var(--ac);letter-spacing:-0.02em;line-height:1.2}
+.slogo-t{font-family:var(--fd);font-size:17px;font-weight:600;color:#1a6fe8;letter-spacing:-0.02em;line-height:1.2}
 .slogo-s{font-size:10px;color:var(--mu);margin-top:3px;letter-spacing:0.06em;text-transform:uppercase}
 .nav{padding:12px 10px;flex:1}
 .navsec{font-size:10px;color:var(--mu);letter-spacing:0.1em;text-transform:uppercase;padding:14px 10px 6px;opacity:0.6}
 .ni{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--r);color:var(--mu);cursor:pointer;transition:all .15s;font-size:12.5px;margin-bottom:2px;user-select:none}
 .ni:hover{color:var(--tx);background:var(--sf2)}
-.ni.active{color:var(--ac);background:rgba(232,213,163,0.08)}
+.ni.active{color:var(--ac);background:rgba(26,111,232,0.10)}
 .ni-ic{font-size:14px;min-width:16px;text-align:center}
 .sfoot{padding:14px 20px;border-top:1px solid var(--bd);font-size:11px;color:var(--mu)}
 .main{margin-left:220px;flex:1;padding:32px 36px;max-width:1200px}
 .page{display:none}.page.active{display:block}
 .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:28px;gap:16px}
-.pt{font-family:var(--fd);font-size:26px;font-weight:300;color:var(--tx);letter-spacing:-0.02em;line-height:1.2}
+.pt{font-family:var(--fd);font-size:26px;font-weight:300;color:#0d1a33;letter-spacing:-0.02em;line-height:1.2}
 .ps{font-size:12px;color:var(--mu);margin-top:5px}
 .wsel{display:flex;align-items:center;gap:8px}
 .wsel label{font-size:11px;color:var(--mu)}
@@ -33,7 +60,7 @@ select:focus{outline:none;border-color:var(--ac2)}
 .mrow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:28px}
 .mc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px}
 .ml{font-size:10px;color:var(--mu);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:8px}
-.mv{font-family:var(--fd);font-size:28px;font-weight:300;color:var(--tx);letter-spacing:-0.02em;line-height:1}
+.mv{font-family:var(--fd);font-size:28px;font-weight:300;color:#0d1a33;letter-spacing:-0.02em;line-height:1}
 .mv.red{color:var(--re)}.mv.amber{color:var(--am)}.mv.blue{color:var(--bl)}.mv.green{color:var(--gr)}
 .msub{font-size:10px;color:var(--mu);margin-top:5px}
 .sec{margin-bottom:32px}
@@ -41,7 +68,7 @@ select:focus{outline:none;border-color:var(--ac2)}
 .sect{font-size:11px;color:var(--mu);text-transform:uppercase;letter-spacing:0.1em}
 .tw{overflow-x:auto;border-radius:var(--r);border:1px solid var(--bd)}
 table{width:100%;border-collapse:collapse;font-size:12.5px}
-thead th{background:var(--sf);color:var(--mu);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;padding:10px 14px;text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap}
+thead th{background:var(--sf2);color:var(--mu);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:0.08em;padding:10px 14px;text-align:left;border-bottom:1px solid var(--bd);white-space:nowrap}
 thead th.r{text-align:right}
 tbody td{padding:10px 14px;border-bottom:1px solid var(--bd);vertical-align:middle;color:var(--tx)}
 tbody td.r{text-align:right;font-variant-numeric:tabular-nums}
@@ -61,8 +88,8 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
 .rv{font-size:11px;color:var(--mu);min-width:32px;text-align:right}
 .btn{background:transparent;border:1px solid var(--bd2);color:var(--tx);font-family:var(--fm);font-size:12px;padding:7px 14px;border-radius:var(--r);cursor:pointer;transition:all .15s}
 .btn:hover{background:var(--sf2);border-color:var(--ac2)}
-.btnp{background:rgba(232,213,163,0.1);border-color:var(--ac2);color:var(--ac)}
-.btnp:hover{background:rgba(232,213,163,0.18)}
+.btnp{background:rgba(26,111,232,0.10);border-color:var(--ac2);color:var(--ac2)}
+.btnp:hover{background:rgba(26,111,232,0.18)}
 .btnd{background:var(--re-bg);border-color:var(--re-b);color:var(--re)}
 .btnxs{font-size:10px;padding:3px 8px}
 input[type=text],input[type=date],textarea{background:var(--sf2);border:1px solid var(--bd2);color:var(--tx);font-family:var(--fm);font-size:12px;padding:8px 12px;border-radius:var(--r);width:100%;transition:border-color .15s}
@@ -77,7 +104,7 @@ label{font-size:11px;color:var(--mu);display:block;margin-bottom:5px}
 .fr2{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .mfoot{display:flex;gap:10px;justify-content:flex-end;margin-top:24px}
 .ua{border:2px dashed var(--bd2);border-radius:var(--r);padding:32px;text-align:center;cursor:pointer;transition:all .2s;background:var(--sf)}
-.ua:hover,.ua.drag{border-color:var(--ac2);background:rgba(232,213,163,0.04)}
+.ua:hover,.ua.drag{border-color:var(--ac2);background:rgba(26,111,232,0.05)}
 .ua.loaded{border-color:var(--gr);border-style:solid;background:var(--gr-bg)}
 .uaicon{font-size:28px;margin-bottom:8px;opacity:0.6}
 .ualabel{font-size:12px;color:var(--mu)}
@@ -94,7 +121,7 @@ input[type=file]{display:none}
 .dok{background:var(--gr)}.dwarn{background:var(--am)}.derr{background:var(--re)}.dwait{background:var(--mu)}
 .fbfs{display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;align-items:center}
 .fbf{background:transparent;border:1px solid var(--bd);color:var(--mu);font-family:var(--fm);font-size:11px;padding:5px 12px;border-radius:20px;cursor:pointer;transition:all .15s}
-.fbf.active{border-color:var(--ac2);color:var(--ac);background:rgba(232,213,163,0.07)}
+.fbf.active{border-color:var(--ac2);color:var(--ac2);background:rgba(26,111,232,0.08)}
 .fbf:hover{border-color:var(--bd2);color:var(--tx)}
 .fbsearch{margin-left:auto;width:200px}
 .fbc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px 18px;margin-bottom:10px}
@@ -113,13 +140,13 @@ input[type=file]{display:none}
 .obbanner{background:var(--re-bg);border:1px solid var(--re-b);border-radius:var(--r);padding:12px 16px;font-size:12px;color:var(--re);display:flex;align-items:center;gap:10px;margin-bottom:20px}
 .pgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:28px}
 .pc{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:18px;position:relative;transition:all .2s}
-.pc:hover{border-color:var(--ac2);transform:translateY(-1px)}
+.pc:hover{border-color:var(--ac);box-shadow:0 2px 12px rgba(26,111,232,0.12);transform:translateY(-1px)}
 .pcrank{font-family:var(--fd);font-size:32px;font-weight:300;position:absolute;top:14px;right:18px;letter-spacing:-0.03em;line-height:1}
-.gold{color:rgba(196,169,109,0.4)}.silver{color:rgba(180,180,180,0.35)}.bronze{color:rgba(160,120,80,0.35)}
+.gold{color:rgba(26,111,232,0.35)}.silver{color:rgba(10,138,92,0.35)}.bronze{color:rgba(98,52,196,0.35)}
 .pcname{font-family:var(--fd);font-size:15px;font-weight:300;color:var(--tx);margin-bottom:14px;max-width:calc(100% - 40px);letter-spacing:-0.01em}
 .pcstat{display:flex;justify-content:space-between;margin-bottom:5px;font-size:11px}
 .pcstat .k{color:var(--mu)}.pcstat .v{color:var(--tx);font-variant-numeric:tabular-nums}
-.pcstat .vg{color:var(--ac)}
+.pcstat .vg{color:#1a6fe8}
 .toast{position:fixed;bottom:24px;right:24px;background:var(--sf);border:1px solid var(--bd2);border-radius:var(--r);padding:12px 18px;font-size:12px;color:var(--tx);z-index:2000;transform:translateY(60px);opacity:0;transition:all .25s;pointer-events:none}
 .toast.show{transform:translateY(0);opacity:1}
 .toast.success{border-color:var(--gr-b);color:var(--gr)}
@@ -133,7 +160,7 @@ input[type=file]{display:none}
 .obrow td{background:rgba(224,82,82,0.04)}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
-::-webkit-scrollbar-thumb{background:var(--bd2);border-radius:3px}
+::-webkit-scrollbar-thumb{background:rgba(26,111,232,0.20);border-radius:3px}
 
 /* ── LOGIN SCREEN ─────────────────────────────────────────────────────────── */
 #login-screen {
@@ -429,19 +456,19 @@ input[type=file]{display:none}
       </div>
       <div style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px 20px;margin-bottom:24px;font-size:12px;color:var(--mu);line-height:2">
         <strong style="color:var(--tx)">Download this week's data first, then upload below:</strong><br>
-        <strong style="color:var(--ac)">1.</strong> Prescriber activity (Looker) →
+        <strong style="color:var(--ac)">1.</strong> Prescriber activity report (Looker) →
           <a href="https://metabase.heliosx.co/question/69858-previous-week-locum-activity-independent-prescribers" target="_blank"
-             style="color:var(--ac2);text-decoration:none;border-bottom:1px solid var(--ac2)">Open in Metabase ↗</a><br>
+             style="color:var(--ac2);text-decoration:none;border-bottom:1px solid var(--ac2)">Open in Metabase ↗</a>
+          <span style="font-size:10px;margin-left:6px;opacity:0.6">Covers activity, order types, and prescribing outcomes in one export</span><br>
         <strong style="color:var(--ac)">2.</strong> Hubstaff timesheets →
           <a href="https://app.hubstaff.com/reports/12549/team/work_sessions?date=2026-05-04&date_end=2026-05-10&group_by=date&filters%5Bteams%5D%5B%5D=team%3A215961&filters%5Bprojects%5D=&filters%5Btasks%5D=&filters%5Bclients%5D=&filters%5Bactivity_level%5D=&filters%5Btime_types%5D=&filters%5Bclient_types%5D=&filters%5Binclude_archived%5D=true&filters%5Bshow_manual%5D=true&filters%5Bshow_client%5D=true&filters%5Bshow_projects%5D=true&filters%5Bshow_tasks%5D=true&filters%5Bshow_started%5D=true&filters%5Bshow_stopped%5D=true&filters%5Bshow_duration%5D=true&filters%5Bshow_activity%5D=true&filters%5Bshow_notes%5D=false" target="_blank"
              style="color:var(--ac2);text-decoration:none;border-bottom:1px solid var(--ac2)">Open in Hubstaff ↗</a>
-          <span style="font-size:10px;margin-left:6px;opacity:0.6">(update dates before exporting)</span><br>
-        <strong style="color:var(--ac)">3.</strong> Prescriber outcomes (Looker) — optional, needed for prescribe/hold/reject rates
+          <span style="font-size:10px;margin-left:6px;opacity:0.6">(update dates in the URL before exporting)</span>
       </div>
       <div class="igrid">
         <div class="icard">
-          <div class="ict">Clinical Events CSV</div>
-          <div class="icd">Activity/events breakdown from Looker</div>
+          <div class="ict">Prescriber Activity CSV</div>
+          <div class="icd">Locum activity report from Looker — covers decisions, order types, and outcomes in one file</div>
           <div class="ua" id="act-drop" onclick="document.getElementById('act-file').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event,'activity')">
             <div class="uaicon">⬇</div><div class="ualabel">Click or drag CSV here</div><div class="uaname" id="act-fname"></div>
           </div>
@@ -456,14 +483,7 @@ input[type=file]{display:none}
           <input type="file" id="ts-file" accept=".csv" onchange="handleFile(event,'timesheet')">
         </div>
       </div>
-      <div class="icard" style="margin-bottom:24px">
-        <div class="ict">Outcomes CSV <span class="badge bm" style="vertical-align:middle;margin-left:6px">optional</span></div>
-        <div class="icd">Prescriber activity report from Looker — prescribed / on hold / rejected per clinician</div>
-        <div class="ua" id="out-drop" onclick="document.getElementById('out-file').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event,'outcomes')">
-          <div class="uaicon">⬇</div><div class="ualabel">Click or drag CSV here</div><div class="uaname" id="out-fname"></div>
-        </div>
-        <input type="file" id="out-file" accept=".csv" onchange="handleFile(event,'outcomes')">
-      </div>
+
       <div class="fr2" style="max-width:700px">
         <div><label>Week label (e.g. "13–19 Apr 2026")</label><input type="text" id="imp-label" placeholder="13–19 Apr 2026"></div>
         <div><label>Week ID (e.g. "2026-W16")</label><input type="text" id="imp-id" placeholder="2026-W16"></div>
@@ -536,14 +556,13 @@ input[type=file]{display:none}
 
 // ─── FIREBASE CONFIG — replace these with your own values ─────────────────────
 var firebaseConfig = {
-  apiKey: "AIzaSyCeBwCdFOqhHDGHkb4GAcEJJiXAomeanKw",
-  authDomain: "medexpress-locum-audit.firebaseapp.com",
-  databaseURL: "https://medexpress-locum-audit-default-rtdb.europe-west1.firebasedatabase.app",
-  projectId: "medexpress-locum-audit",
-  storageBucket: "medexpress-locum-audit.firebasestorage.app",
-  messagingSenderId: "397202189507",
-  appId: "1:397202189507:web:2a95b5066f65284a3e0676",
-  measurementId: "G-ETSY0DHDGF"
+  apiKey:            "REPLACE_WITH_YOUR_API_KEY",
+  authDomain:        "REPLACE_WITH_YOUR_AUTH_DOMAIN",
+  databaseURL:       "REPLACE_WITH_YOUR_DATABASE_URL",
+  projectId:         "REPLACE_WITH_YOUR_PROJECT_ID",
+  storageBucket:     "REPLACE_WITH_YOUR_STORAGE_BUCKET",
+  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
+  appId:             "REPLACE_WITH_YOUR_APP_ID"
 };
 
 var db, auth;
@@ -1098,27 +1117,32 @@ function runImport() {
     statusLines.innerHTML += '<div class="srow"><span class="sdot '+cls+'"></span><span>'+esc(msg)+'</span></div>';
   }
 
+  // ── Parse both CSVs ────────────────────────────────────────────────────────
   var actRows, tsRows;
-  try { actRows = parseCSV(activityCSV); addSt('Parsed '+actRows.length+' activity events','ok'); }
+  try { actRows = parseCSV(activityCSV); addSt('Parsed '+actRows.length+' activity rows','ok'); }
   catch(e) { addSt('Failed to parse activity CSV: '+e.message,'err'); return; }
   try { tsRows  = parseCSV(timesheetCSV); addSt('Parsed '+tsRows.length+' timesheet sessions','ok'); }
   catch(e) { addSt('Failed to parse timesheet CSV: '+e.message,'err'); return; }
 
   addSt('Running analysis…','wait');
 
-  // ── Order type classification ──────────────────────────────────────────────
-  var TYPE_COL = 'Order Classifications with AP - Order → RETAINED_DOSE_TYPE';
-  var COMPLEX_TYPES = {'Complex Repeats':1, 'Periodic Reviews':1};
-  var SIMPLE_TYPES  = {'Simple Repeats':1};
+  // ── Column names in the new combined activity/outcomes CSV ─────────────────
+  var CAT_COL       = 'Orders Weight Loss Glp1 - Order \u2192 Order Category';
+  var COMPLEX_CATS  = {'Complex Repeat':1,'6 Month Review':1};
+  var SIMPLE_CATS   = {'Simple Repeat':1};
+  var NEW_ORDER_CATS= {'New Orders Starter Dose':1,'New Orders Transfer Patient':1};
 
-  function classifyType(t) {
-    return COMPLEX_TYPES[t] ? 'complex' : SIMPLE_TYPES[t] ? 'simple' : 'breach';
+  function classifyType(cat) {
+    return COMPLEX_CATS[cat]   ? 'complex'
+         : SIMPLE_CATS[cat]    ? 'simple'
+         : NEW_ORDER_CATS[cat] ? 'breach'
+         : 'breach';
   }
 
   // ── Name normalisation ─────────────────────────────────────────────────────
   var NAME_MAP = {
     'abbas al jabari':'Abbas Aljabari','hishma dhruv parmar':'Hishma Dhruvparmar',
-    'shezana akhtar azam':'Shezana Azam','christina eboh':'Christiana Eboh',
+    'shezana akhtar azam':'Shezana Azam','christiana eboh':'Christiana Eboh',
     'bushra mohammed':'Mohammed Bushra','alison yung':'Sze Wingyung','anthonia awoyera':'Anthonia Iyio'
   };
   function mapName(name) {
@@ -1126,24 +1150,20 @@ function runImport() {
     return NAME_MAP[n] || name.trim().split(' ').map(function(p){ return p.charAt(0).toUpperCase()+p.slice(1); }).join(' ');
   }
 
-  // ── Parse activity events with order type ──────────────────────────────────
+  // ── Parse activity events ─────────────────────────────────────────────────
+  // New format: Date Time: Hour, Email, Event, Order Category
   var actEvents = actRows.map(function(r) {
-    var tsStr = r['Date Time: Minute'] || '';
+    var tsStr = r['Date Time: Hour'] || r['Date Time: Minute'] || '';
     var ts = null;
     var m = tsStr.match(/(\w+ \d+, \d+), (\d+:\d+)/);
     if (m) ts = new Date(m[1]+' '+m[2]);
-    var email   = (r['Email']||'').toLowerCase().trim();
-    var rawType = r[TYPE_COL] || r['Order Classifications with AP - Order → RETAINED_DOSE_TYPE'] || '';
-    return {
-      ts: ts,
-      actName: emailToName(email),
-      orderId: r['Order → Order ID URL'] || '',
-      orderType: rawType,
-      category: classifyType(rawType)
-    };
+    var email = (r['Email']||'').toLowerCase().trim();
+    var cat   = r[CAT_COL] || '';
+    var event = r['Event'] || '';
+    return { ts:ts, actName:emailToName(email), cat:cat, event:event, category:classifyType(cat) };
   }).filter(function(r){ return r.ts && r.actName; });
 
-  // ── Parse timesheet sessions, collapse to per-person total hours ───────────
+  // ── Parse timesheet sessions, group by person ──────────────────────────────
   var tsMap = {};
   tsRows.forEach(function(r) {
     var member = r['Member']||'';
@@ -1162,220 +1182,178 @@ function runImport() {
     }
   });
 
-  // ── Find people with activity but NO timesheet ─────────────────────────────
+  // ── Helper: format Date to HH:MM UK local time ─────────────────────────────
+  function fmtTime(d) {
+    if (!d) return null;
+    return d.toLocaleTimeString('en-GB',{hour:'2-digit',minute:'2-digit',timeZone:'Europe/London'});
+  }
+
+  // ── Track all names seen in activity ──────────────────────────────────────
   var allActNames = {};
   actEvents.forEach(function(e){ allActNames[e.actName]=1; });
 
-  // ── Helper: format Date to HH:MM string in UK local time ────────────────────
-  function fmtTime(d) {
-    if (!d) return null;
-    return d.toLocaleTimeString('en-GB', {hour:'2-digit', minute:'2-digit', timeZone:'Europe/London'});
-  }
-
-  // ── Build results for timesheeted people ──────────────────────────────────
-  var results = {};
+  // ── Build per-person results from timesheet ────────────────────────────────
+  var results  = {};
+  var outcomes = {};
 
   Object.entries(tsMap).forEach(function(pair) {
     var actName=pair[0]; var days=pair[1];
     var totalHrs=0;
-    var complexOrders={}, simpleOrders={}, breachOrders={};
+    var complexSet={}, simpleSet={}, breachSet={};
+    var btypes={};
     var tsStart=null, tsEnd=null;
+    var firstAct=null, lastAct=null;
 
     Object.values(days).forEach(function(d) {
       var hrs=(d.stop-d.start)/3600000;
       totalHrs+=hrs;
-      if (!tsStart || d.start<tsStart) tsStart=d.start;
-      if (!tsEnd   || d.stop>tsEnd)    tsEnd=d.stop;
+      if (!tsStart||d.start<tsStart) tsStart=d.start;
+      if (!tsEnd  ||d.stop>tsEnd)    tsEnd=d.stop;
 
-      var dayEvts = actEvents.filter(function(e){
-        return e.actName===actName && e.ts>=d.start && e.ts<=d.stop;
-      });
-      dayEvts.forEach(function(e){
-        if (!e.orderId) return;
-        if (e.category==='complex') complexOrders[e.orderId]=1;
-        else if (e.category==='simple') simpleOrders[e.orderId]=1;
-        else breachOrders[e.orderId]=(breachOrders[e.orderId]||0), breachOrders[e.orderId]=e.orderType;
-      });
+      actEvents.filter(function(e){ return e.actName===actName && e.ts>=d.start && e.ts<=d.stop; })
+        .forEach(function(e){
+          var key = e.ts.toISOString()+e.event+e.cat; // unique key per event row
+          if (e.category==='complex') complexSet[key]=1;
+          else if (e.category==='simple') simpleSet[key]=1;
+          else { breachSet[key]=1; btypes[e.cat]=1; }
+          if (!firstAct||e.ts<firstAct) firstAct=e.ts;
+          if (!lastAct ||e.ts>lastAct)  lastAct=e.ts;
+        });
     });
 
-    var cCount = Object.keys(complexOrders).length;
-    var sCount = Object.keys(simpleOrders).length;
-    var bCount = Object.keys(breachOrders).length;
-    var totalRota = cCount + sCount;
-    var dominant  = cCount >= sCount ? 'complex' : 'simple';
-    var rate      = dominant==='complex' ? 6 : 24;
-    var expected  = Math.round(totalHrs * rate);
-    var pct       = expected>0 ? Math.round(totalRota/expected*100) : 0;
+    var cCount=Object.keys(complexSet).length, sCount=Object.keys(simpleSet).length, bCount=Object.keys(breachSet).length;
+    var totalRota=cCount+sCount;
+    var dominant = cCount>=sCount?'complex':'simple';
+    var rate     = dominant==='complex'?6:24;
+    var expected = Math.round(totalHrs*rate);
+    var pct      = expected>0?Math.round(totalRota/expected*100):0;
+    var gapStart = (tsStart&&firstAct)?Math.round((firstAct-tsStart)/60000):null;
+    var gapEnd   = (tsEnd&&lastAct)   ?Math.round((tsEnd-lastAct)/60000)  :null;
 
-    // Timing
-    var firstAct=null, lastAct=null;
-    actEvents.forEach(function(e){
-      if (e.actName===actName) {
-        if (!firstAct||e.ts<firstAct) firstAct=e.ts;
-        if (!lastAct ||e.ts>lastAct)  lastAct=e.ts;
-      }
-    });
-    var gapStart = (tsStart&&firstAct) ? Math.round((firstAct-tsStart)/60000) : null;
-    var gapEnd   = (tsEnd&&lastAct)    ? Math.round((tsEnd-lastAct)/60000)    : null;
-
-    // Flag
     var flag='ok';
-    if (bCount>0)       flag='breach';
-    if (totalRota===0)  flag='zero';
-    if (pct>0&&pct<20)  flag='severe';
-    if (pct>=20&&pct<60) flag='concern';
-    if (flag==='ok' && ((gapStart&&gapStart>45)||(gapEnd&&gapEnd>45))) flag='timing';
-    // zero overrides timing for display
-    if (totalRota===0&&flag!='breach') flag='zero';
+    if (bCount>0)             flag='breach';
+    if (totalRota===0)        flag='zero';
+    if (pct>0&&pct<20)        flag='severe';
+    if (pct>=20&&pct<60)      flag='concern';
+    if (flag==='ok'&&((gapStart&&gapStart>45)||(gapEnd&&gapEnd>45))) flag='timing';
+    if (totalRota===0&&flag!=='breach') flag='zero';
 
-    var mname = Object.values(days)[0].member;
-    // Collect breach types
-    var btSet={};
-    actEvents.filter(function(e){ return e.actName===actName && e.category==='breach'; }).forEach(function(e){ btSet[e.orderType]=1; });
+    var mname=Object.values(days)[0].member;
+    var key=actName.replace(/[.#$/\[\]]/g,'_');
 
-    results[actName.replace(/[.#$\/\[\]]/g,'_')] = {
-      name: mname,
-      provider: provider,
-      ts_hrs: Math.round(totalHrs*10)/10,
-      complex: cCount, simple: sCount, breach: bCount,
-      total_rota: totalRota,
-      dominant: dominant,
-      expected: expected, pct: pct,
-      breach_types: Object.keys(btSet),
-      gap_start: gapStart, gap_end: gapEnd,
-      ts_start: tsStart ? fmtTime(tsStart) : null,
-      ts_end:   tsEnd   ? fmtTime(tsEnd)   : null,
-      first_act: firstAct ? fmtTime(firstAct) : null,
-      last_act:  lastAct  ? fmtTime(lastAct)  : null,
-      flag: flag
-    };
-  });
-
-  // ── Add no-timesheet people ────────────────────────────────────────────────
-  Object.keys(allActNames).forEach(function(actName) {
-    var key = actName.replace(/[.#$\/\[\]]/g,'_');
-    if (results[key]) return; // already processed
-    var cO={},sO={},bO={};
-    actEvents.filter(function(e){ return e.actName===actName; }).forEach(function(e){
-      if (!e.orderId) return;
-      if (e.category==='complex') cO[e.orderId]=1;
-      else if (e.category==='simple') sO[e.orderId]=1;
-      else bO[e.orderId]=1;
-    });
-    var btSet={};
-    actEvents.filter(function(e){ return e.actName===actName&&e.category==='breach'; }).forEach(function(e){ btSet[e.orderType]=1; });
     results[key] = {
-      name: actName,
-      provider: provider,
-      ts_hrs: 0,
-      complex: Object.keys(cO).length,
-      simple:  Object.keys(sO).length,
-      breach:  Object.keys(bO).length,
-      total_rota: Object.keys(cO).length + Object.keys(sO).length,
-      dominant: 'complex',
-      expected: 0, pct: 0,
-      breach_types: Object.keys(btSet),
-      gap_start: null, gap_end: null,
-      ts_start: null, ts_end: null,
-      first_act: null, last_act: null,
-      flag: 'no_timesheet'
+      name:mname, provider:provider,
+      ts_hrs:Math.round(totalHrs*10)/10,
+      complex:cCount, simple:sCount, breach:bCount,
+      total_rota:totalRota, dominant:dominant,
+      expected:expected, pct:pct,
+      breach_types:Object.keys(btypes),
+      gap_start:gapStart, gap_end:gapEnd,
+      ts_start:tsStart?fmtTime(tsStart):null, ts_end:tsEnd?fmtTime(tsEnd):null,
+      first_act:firstAct?fmtTime(firstAct):null, last_act:lastAct?fmtTime(lastAct):null,
+      flag:flag
+    };
+
+    // ── Outcomes stats from the same file ──────────────────────────────────
+    var allEvts = actEvents.filter(function(e){
+      return e.actName===actName && Object.values(days).some(function(d){ return e.ts>=d.start&&e.ts<=d.stop; });
+    });
+    var total  = allEvts.length;
+    var pres   = allEvts.filter(function(e){return e.event==='prescribed';}).length;
+    var hold   = allEvts.filter(function(e){return e.event==='on_hold_reason_added';}).length;
+    var rej    = allEvts.filter(function(e){return e.event==='rejection';}).length;
+    var presC  = allEvts.filter(function(e){return e.event==='prescribed'&&COMPLEX_CATS[e.cat];}).length;
+    var presS  = allEvts.filter(function(e){return e.event==='prescribed'&&SIMPLE_CATS[e.cat];}).length;
+    var totC   = allEvts.filter(function(e){return COMPLEX_CATS[e.cat];}).length;
+    var totS   = allEvts.filter(function(e){return SIMPLE_CATS[e.cat];}).length;
+    var newOrd = allEvts.filter(function(e){return NEW_ORDER_CATS[e.cat];}).length;
+    var newOrdTypes={};
+    allEvts.filter(function(e){return NEW_ORDER_CATS[e.cat];}).forEach(function(e){newOrdTypes[e.cat]=1;});
+    var minsPerOrder = (totalHrs&&total)?Math.round(totalHrs*60/total*10)/10:null;
+
+    outcomes[key] = {
+      name:mname, total_decisions:total,
+      prescribed:pres, on_hold:hold, rejected:rej,
+      pres_rate:         total?Math.round(pres/total*100*10)/10:null,
+      hold_rate:         total?Math.round(hold/total*100*10)/10:null,
+      rej_rate:          total?Math.round(rej/total*100*10)/10:null,
+      pres_rate_complex: totC?Math.round(presC/totC*100*10)/10:null,
+      pres_rate_simple:  totS?Math.round(presS/totS*100*10)/10:null,
+      new_order_decisions:newOrd,
+      new_order_types:Object.keys(newOrdTypes),
+      mins_per_order:minsPerOrder,
+      ts_hrs:Math.round(totalHrs*10)/10,
+      dominant:dominant
     };
   });
 
-  var count  = Object.keys(results).length;
-  var notsC  = Object.values(results).filter(function(r){return r.flag==='no_timesheet';}).length;
-  var zeroC  = Object.values(results).filter(function(r){return r.flag==='zero';}).length;
-  var brC    = Object.values(results).filter(function(r){return r.flag==='breach';}).length;
-  var sevC   = Object.values(results).filter(function(r){return r.flag==='severe';}).length;
+  // ── No-timesheet people (in activity but no timesheet) ────────────────────
+  Object.keys(allActNames).forEach(function(actName) {
+    var key=actName.replace(/[.#$/\[\]]/g,'_');
+    if (results[key]) return;
+    var evts=actEvents.filter(function(e){return e.actName===actName;});
+    var cO={},sO={},bO={},btypes={};
+    evts.forEach(function(e){
+      var k=e.ts.toISOString()+e.event+e.cat;
+      if (e.category==='complex') cO[k]=1;
+      else if (e.category==='simple') sO[k]=1;
+      else { bO[k]=1; btypes[e.cat]=1; }
+    });
+    var total=evts.length;
+    var pres=evts.filter(function(e){return e.event==='prescribed';}).length;
+    var hold=evts.filter(function(e){return e.event==='on_hold_reason_added';}).length;
+    var rej=evts.filter(function(e){return e.event==='rejection';}).length;
+    var newOrd=evts.filter(function(e){return NEW_ORDER_CATS[e.cat];}).length;
+    var newOrdTypes={};
+    evts.filter(function(e){return NEW_ORDER_CATS[e.cat];}).forEach(function(e){newOrdTypes[e.cat]=1;});
+    results[key]={
+      name:actName, provider:provider,
+      ts_hrs:0, complex:Object.keys(cO).length, simple:Object.keys(sO).length, breach:Object.keys(bO).length,
+      total_rota:Object.keys(cO).length+Object.keys(sO).length,
+      dominant:'complex', expected:0, pct:0,
+      breach_types:Object.keys(btypes),
+      gap_start:null, gap_end:null,
+      ts_start:null, ts_end:null, first_act:null, last_act:null,
+      flag:'no_timesheet'
+    };
+    outcomes[key]={
+      name:actName, total_decisions:total,
+      prescribed:pres, on_hold:hold, rejected:rej,
+      pres_rate:total?Math.round(pres/total*100*10)/10:null,
+      hold_rate:total?Math.round(hold/total*100*10)/10:null,
+      rej_rate:total?Math.round(rej/total*100*10)/10:null,
+      pres_rate_complex:null, pres_rate_simple:null,
+      new_order_decisions:newOrd, new_order_types:Object.keys(newOrdTypes),
+      mins_per_order:null, ts_hrs:0, dominant:'complex'
+    };
+  });
+
+  var count=Object.keys(results).length;
+  var notsC=Object.values(results).filter(function(r){return r.flag==='no_timesheet';}).length;
+  var zeroC=Object.values(results).filter(function(r){return r.flag==='zero';}).length;
+  var brC  =Object.values(results).filter(function(r){return r.flag==='breach';}).length;
+  var sevC =Object.values(results).filter(function(r){return r.flag==='severe';}).length;
   addSt('Analysis complete: '+count+' locums processed','ok');
-  addSt('Flags: '+notsC+' no timesheet, '+zeroC+' zero activity, '+brC+' off-rota orders, '+sevC+' severe',(notsC+zeroC+brC+sevC)>0?'warn':'ok');
+  addSt('Flags: '+notsC+' no timesheet, '+zeroC+' zero activity, '+brC+' off-rota, '+sevC+' severe',(notsC+zeroC+brC+sevC)>0?'warn':'ok');
   addSt('Saving to Firebase…','wait');
 
   db.ref('weeks/'+weekId).set({label:weekLabel, provider:provider, importedAt:Date.now(), locums:results}, function() {
-    addSt('Saved to Firebase!','ok');
-    showToast('Week '+weekLabel+' imported — '+count+' locums','success');
-    loadWeeks(); loadWeek(weekId); loadPerformers(weekId);
-
-    // ── Parse and save outcomes CSV if provided ──────────────────────────────
-    if (outcomesCSV) {
-      addSt('Parsing outcomes CSV…','wait');
-      var outRows;
-      try { outRows = parseCSV(outcomesCSV); addSt('Parsed '+outRows.length+' outcome rows','ok'); }
-      catch(e) { addSt('Outcomes CSV parse error: '+e.message,'err'); outRows = null; }
-
-      if (outRows) {
-        var CAT_COL = 'Orders Weight Loss Glp1 - Order → Order Category';
-        var NEW_ORDER_CATS = {'New Orders Starter Dose':1,'New Orders Transfer Patient':1};
-        var COMPLEX_CATS   = {'Complex Repeat':1,'6 Month Review':1};
-        var SIMPLE_CATS    = {'Simple Repeat':1};
-
-        // Build per-person stats
-        var opByName = {};
-        outRows.forEach(function(r) {
-          var email = (r['Email']||'').toLowerCase().trim();
-          var name  = emailToName(email);
-          var event = r['Event']||'';
-          var cat   = r[CAT_COL]||'';
-          if (!opByName[name]) opByName[name] = {name:name, decisions:[], new_order_types:{}};
-          opByName[name].decisions.push({event:event, cat:cat});
-          if (NEW_ORDER_CATS[cat]) opByName[name].new_order_types[cat] = 1;
-        });
-
-        var outResults = {};
-        Object.values(opByName).forEach(function(p) {
-          var d = p.decisions;
-          var total   = d.length;
-          var pres    = d.filter(function(x){return x.event==='prescribed';}).length;
-          var hold    = d.filter(function(x){return x.event==='on_hold_reason_added';}).length;
-          var rej     = d.filter(function(x){return x.event==='rejection';}).length;
-          var presC   = d.filter(function(x){return x.event==='prescribed'&&COMPLEX_CATS[x.cat];}).length;
-          var presS   = d.filter(function(x){return x.event==='prescribed'&&SIMPLE_CATS[x.cat];}).length;
-          var totC    = d.filter(function(x){return COMPLEX_CATS[x.cat];}).length;
-          var totS    = d.filter(function(x){return SIMPLE_CATS[x.cat];}).length;
-          var newOrd  = d.filter(function(x){return NEW_ORDER_CATS[x.cat];}).length;
-          // Productivity from timesheet cross-ref
-          var tsMatch = results[p.name.replace(/[.#$\/\[\]]/g,'_')];
-          var tsHrs   = tsMatch ? tsMatch.ts_hrs : null;
-          var minsPerOrder = (tsHrs && total>0) ? Math.round(tsHrs*60/total*10)/10 : null;
-          var dominant = (tsMatch && tsMatch.dominant) || (totC>=totS?'complex':'simple');
-          outResults[p.name.replace(/[.#$\/\[\]]/g,'_')] = {
-            name: p.name,
-            total_decisions: total,
-            prescribed: pres, on_hold: hold, rejected: rej,
-            pres_rate:         total>0 ? Math.round(pres/total*100*10)/10 : null,
-            hold_rate:         total>0 ? Math.round(hold/total*100*10)/10 : null,
-            rej_rate:          total>0 ? Math.round(rej/total*100*10)/10  : null,
-            pres_rate_complex: totC>0  ? Math.round(presC/totC*100*10)/10 : null,
-            pres_rate_simple:  totS>0  ? Math.round(presS/totS*100*10)/10 : null,
-            new_order_decisions: newOrd,
-            new_order_types: Object.keys(p.new_order_types),
-            mins_per_order: minsPerOrder,
-            ts_hrs: tsHrs,
-            dominant: dominant
-          };
-        });
-
-        db.ref('outcomes/'+weekId).set(outResults, function() {
-          addSt('Outcomes saved — '+Object.keys(outResults).length+' clinicians','ok');
-          showToast('Outcomes data saved','success');
-        });
-      }
-    } else {
-      addSt('No outcomes CSV provided — skipping prescribe/hold/reject analysis','wait');
-    }
-
-    var preview = Object.values(results)
-      .filter(function(r){ return r.flag==='no_timesheet'||r.flag==='zero'||r.flag==='breach'||r.flag==='severe'; })
-      .sort(function(a,b){ var fo={no_timesheet:0,zero:1,breach:2,severe:3}; return (fo[a.flag]||9)-(fo[b.flag]||9); })
-      .slice(0,12);
-    document.getElementById('imp-preview').innerHTML =
-      '<div class="sech" style="margin-bottom:12px"><div class="sect">Preview — flagged locums</div></div>'+
-      '<div class="tw"><table><thead><tr><th>Name</th><th>Flag</th><th class="r">TS hrs</th><th>Dominant</th><th class="r">Rota orders</th><th class="r">Expected</th><th>Rate</th></tr></thead><tbody>'+
-      preview.map(function(r){
-        var fb = {no_timesheet:'<span class="badge br">No timesheet</span>',zero:'<span class="badge br">Zero activity</span>',breach:'<span class="badge ba">Off-rota</span>',severe:'<span class="badge ba">Severe</span>'};
-        return '<tr><td>'+esc(r.name)+'</td><td>'+(fb[r.flag]||'')+'</td><td class="r">'+r.ts_hrs+'</td><td>'+domBadge(r.dominant)+'</td><td class="r">'+(r.total_rota||0)+'</td><td class="r dim">'+r.expected+'</td><td>'+rateBar(r.pct)+'</td></tr>';
-      }).join('')+
-      '</tbody></table></div>';
+    db.ref('outcomes/'+weekId).set(outcomes, function() {
+      addSt('Saved — '+count+' locums, outcomes included','ok');
+      showToast('Week '+weekLabel+' imported','success');
+      loadWeeks(); loadWeek(weekId); loadPerformers(weekId);
+      var preview=Object.values(results)
+        .filter(function(r){return r.flag==='no_timesheet'||r.flag==='zero'||r.flag==='breach'||r.flag==='severe';})
+        .sort(function(a,b){var fo={no_timesheet:0,zero:1,breach:2,severe:3};return (fo[a.flag]||9)-(fo[b.flag]||9);})
+        .slice(0,12);
+      document.getElementById('imp-preview').innerHTML=
+        '<div class="sech" style="margin-bottom:12px"><div class="sect">Preview — flagged locums</div></div>'+
+        '<div class="tw"><table><thead><tr><th>Name</th><th>Flag</th><th class="r">TS hrs</th><th>Dominant</th><th class="r">Decisions</th><th class="r">Expected</th><th>Rate</th></tr></thead><tbody>'+
+        preview.map(function(r){
+          var fb={no_timesheet:'<span class="badge br">No timesheet</span>',zero:'<span class="badge br">Zero activity</span>',breach:'<span class="badge ba">Off-rota</span>',severe:'<span class="badge ba">Severe</span>'};
+          return '<tr><td>'+esc(r.name)+'</td><td>'+(fb[r.flag]||'')+'</td><td class="r">'+r.ts_hrs+'</td><td>'+domBadge(r.dominant)+'</td><td class="r">'+(r.total_rota||0)+'</td><td class="r dim">'+r.expected+'</td><td>'+rateBar(r.pct)+'</td></tr>';
+        }).join('')+'</tbody></table></div>';
+    });
   });
 }
 
