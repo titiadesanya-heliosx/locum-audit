@@ -672,6 +672,7 @@ function loadWeeks() {
     if (ids.length > 0) {
       loadWeek(ids[0]);
       loadPerformers(ids[0]);
+      loadSummary(ids[0]);
     } else {
       seedDemoData();
     }
@@ -1441,7 +1442,7 @@ function runImport() {
     db.ref('outcomes/'+weekId).set(outcomes, function() {
       addSt('Saved — '+count+' locums, outcomes included','ok');
       showToast('Week '+weekLabel+' imported','success');
-      loadWeeks(); loadWeek(weekId); loadPerformers(weekId);
+      loadWeeks(); loadWeek(weekId); loadPerformers(weekId); loadSummary(weekId);
       var preview=Object.values(results)
         .filter(function(r){return r.flag==='no_timesheet'||r.flag==='zero'||r.flag==='breach'||r.flag==='severe';})
         .sort(function(a,b){var fo={no_timesheet:0,zero:1,breach:2,severe:3};return (fo[a.flag]||9)-(fo[b.flag]||9);})
@@ -1499,29 +1500,60 @@ function loadSummary(weekId) {
         '<td class="dim" style="font-size:11px">'+esc(types)+'</td></tr>';
     }).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--mu);padding:16px">None this week \u2713</td></tr>';
 
-    // ── 2. HOURS DISCREPANCY (uses day_timing stored at import) ───────────────
-    // Build per-person summary from day_timing
+    // ── 2. HOURS DISCREPANCY ──────────────────────────────────────────────────
+    // Uses day_timing (stored at import) when available for the hour grid.
+    // Falls back to ts_hrs vs active window estimate when not available.
     var discrepancy = [];
     locums.forEach(function(l) {
-      if (!l.day_timing || l.ts_hrs === 0) return;
-      // Firebase stores arrays as objects with integer keys - convert back
-      var days = Array.isArray(l.day_timing)
-        ? l.day_timing
-        : Object.values(l.day_timing);
+      if (l.ts_hrs === 0 || !l.ts_hrs) return;
+
       var totalLogged   = 0;
       var totalActive   = 0;
       var totalInactive = 0;
       var flaggedDays   = [];
 
-      days.forEach(function(d) {
-        totalLogged   += d.ts_hrs || 0;
-        totalActive   += d.active_hrs || 0;
-        totalInactive += d.inactive_hrs || 0;
-        if (d.inactive_hrs && d.inactive_hrs > 0 && (d.ts_hrs > 0) &&
-            (d.inactive_hrs / d.ts_hrs > 0.20) && d.ts_hrs >= 2) {
-          flaggedDays.push(d);
+      if (l.day_timing) {
+        // ── Rich path: day_timing stored at import ────────────────────────
+        var days = Array.isArray(l.day_timing)
+          ? l.day_timing : Object.values(l.day_timing);
+        days.forEach(function(d) {
+          if (!d || !d.ts_hrs) return;
+          totalLogged   += d.ts_hrs || 0;
+          totalActive   += d.active_hrs || 0;
+          totalInactive += d.inactive_hrs || 0;
+          if ((d.inactive_hrs||0) > 0 && (d.ts_hrs||0) >= 2 &&
+              (d.inactive_hrs / d.ts_hrs) > 0.20) {
+            flaggedDays.push(d);
+          }
+        });
+      } else {
+        // ── Fallback path: estimate from stored ts_hrs and activity window ─
+        // Use ts_hrs as logged, estimate active as (last_act hour - first_act hour + 1)
+        function parseHM(t) {
+          if (!t) return null;
+          var p = t.split(':');
+          return parseInt(p[0]) + parseInt(p[1])/60;
         }
-      });
+        var tsS = parseHM(l.ts_start); var tsE = parseHM(l.ts_end);
+        var acS = parseHM(l.first_act); var acE = parseHM(l.last_act);
+        if (tsE !== null && tsS !== null && tsE < tsS) tsE += 24;
+        if (acE !== null && acS !== null && acE < acS) acE += 24;
+        totalLogged = l.ts_hrs;
+        if (acS !== null && acE !== null) {
+          totalActive   = Math.max(0, acE - acS);
+          totalInactive = Math.max(0, totalLogged - totalActive);
+        }
+        if (totalInactive > 0 && totalLogged >= 2) {
+          flaggedDays.push({
+            date: 'week total',
+            ts_start: l.ts_start, ts_end: l.ts_end,
+            ts_hrs: totalLogged,
+            active_hrs: Math.round(totalActive * 10) / 10,
+            inactive_hrs: Math.round(totalInactive * 10) / 10,
+            hour_grid: null
+          });
+        }
+      }
 
       var variancePct = totalLogged > 0 ? Math.round(totalInactive / totalLogged * 100) : 0;
       if (variancePct >= 20 && flaggedDays.length > 0) {
@@ -1532,7 +1564,8 @@ function loadSummary(weekId) {
           inactive: Math.round(totalInactive * 10) / 10,
           adjusted: Math.round(Math.max(0, totalLogged - totalInactive) * 10) / 10,
           variancePct: variancePct,
-          flaggedDays: flaggedDays
+          flaggedDays: flaggedDays,
+          hasDayTiming: !!l.day_timing
         });
       }
     });
