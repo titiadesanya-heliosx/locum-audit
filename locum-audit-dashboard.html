@@ -161,6 +161,16 @@ input[type=file]{display:none}
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:transparent}
 ::-webkit-scrollbar-thumb{background:rgba(26,111,232,0.20);border-radius:3px}
+.hgrid{display:flex;gap:2px;flex-wrap:wrap;margin-top:6px}
+.hcell{width:22px;height:18px;border-radius:2px;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:500;cursor:default}
+.hcell-active{background:var(--gr-bg);color:var(--gr);border:1px solid var(--gr-b)}
+.hcell-inactive{background:var(--re-bg);color:var(--re);border:1px solid var(--re-b)}
+.day-expand{cursor:pointer;user-select:none;color:var(--ac);font-size:11px;padding:2px 6px;border-radius:3px;border:1px solid var(--bl-b);background:var(--bl-bg)}
+.day-expand:hover{background:var(--bl-b)}
+.day-detail{display:none;padding:10px 14px 14px 28px;background:rgba(26,111,232,0.03);border-bottom:1px solid var(--bd)}
+.day-detail.open{display:block}
+.sum-section-hdr{font-size:11px;color:var(--mu);font-weight:500;text-transform:uppercase;letter-spacing:.08em;padding:4px 0 8px;border-bottom:1px solid var(--bd);margin-bottom:8px}
+.issue-count{display:inline-flex;align-items:center;justify-content:center;background:var(--re-bg);color:var(--re);border:1px solid var(--re-b);border-radius:10px;font-size:10px;font-weight:500;padding:1px 7px;margin-left:8px}
 
 /* ── LOGIN SCREEN ─────────────────────────────────────────────────────────── */
 #login-screen {
@@ -372,79 +382,106 @@ input[type=file]{display:none}
 
     <div id="page-summary" class="page">
       <div class="ph">
-        <div><div class="pt">Weekly Summary</div><div class="ps" id="sum-sub">Select a week to load the summary.</div></div>
-        <div class="wsel"><label>Week:</label>
-          <select id="sum-wsel" onchange="loadSummary(this.value)"></select>
+        <div>
+          <div class="pt">Weekly Summary</div>
+          <div class="ps" id="sum-sub">Select a week to load the summary.</div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <div class="wsel"><label>Week:</label>
+            <select id="sum-wsel" onchange="loadSummary(this.value)"></select>
+          </div>
+          <button class="btn btnp" onclick="copyAgencySummary()" id="copy-btn" style="white-space:nowrap">Copy for agency</button>
         </div>
       </div>
 
-      <!-- Timesheet vs Activity -->
+      <!-- Issue count banner -->
+      <div id="sum-banner" style="display:none;background:var(--re-bg);border:1px solid var(--re-b);border-radius:var(--r);padding:14px 20px;margin-bottom:24px;font-size:13px;color:var(--re);display:none;align-items:center;gap:10px">
+        <strong id="sum-banner-text"></strong>
+      </div>
+
+      <!-- 1. No timesheet -->
       <div class="sec">
-        <div class="sech">
-          <div class="sect">⏱ Timesheet vs Activity — paid hours with no clinical activity</div>
+        <div class="sech"><div class="sect" id="head-nots">⛔ No timesheet logged</div></div>
+        <div style="font-size:12px;color:var(--mu);margin-bottom:12px;line-height:1.7">
+          These locums have clinical activity recorded in the system during this week but submitted <strong>no Hubstaff timesheet entries</strong>.
+          They were working but not logging their hours — this needs to be raised with the agency to ensure accurate payment records and compliance.
+        </div>
+        <div class="tw"><table><thead><tr>
+          <th>Name</th><th class="r">Decisions made</th><th>Dates active</th><th>Order types worked on</th>
+        </tr></thead><tbody id="tb-sum-nots"></tbody></table></div>
+      </div>
+
+      <!-- 2. Hours discrepancy -->
+      <div class="sec" style="margin-top:32px">
+        <div class="sech"><div class="sect" id="head-ts">⏱ Hours discrepancy</div></div>
+        <div style="font-size:12px;color:var(--mu);margin-bottom:12px;line-height:1.7">
+          Compares each locum's <strong>Hubstaff logged hours</strong> (what they claim to have worked) against their
+          <strong>active hours</strong> — the number of distinct hours in which they made at least one clinical decision.
+          Any hour they were clocked in but made no decisions counts as inactive paid time.
+          Only locums where inactive hours exceed <strong>20% of their logged hours</strong> are shown.
+          The hourly grid for each day shows green (decisions made), red (clocked in, no decisions).
+          <em>Note: activity timestamps are hourly so the active count may underestimate by up to 1 hour per day.</em>
         </div>
         <div class="tw"><table><thead><tr>
           <th>Name</th>
-          <th class="r">Clocked hrs</th>
+          <th class="r">Logged hrs</th>
           <th class="r">Active hrs</th>
-          <th class="r">Inactive hrs paid</th>
+          <th class="r">Inactive hrs</th>
+          <th class="r">Variance</th>
           <th class="r">Adjusted hrs to pay</th>
-          <th>Timesheet window</th>
-          <th>Activity window</th>
+          <th class="r">Flagged days</th>
         </tr></thead><tbody id="tb-sum-ts"></tbody></table></div>
       </div>
 
-      <!-- New orders warning -->
-      <div class="sec">
-        <div class="sech"><div class="sect">🚨 New Order Activity — locums not assigned to new orders</div></div>
-        <div style="font-size:11px;color:var(--mu);margin-bottom:10px">1st offence = warning flag. 2nd offence = immediate offboarding.</div>
+      <!-- 3. Off-rota orders -->
+      <div class="sec" style="margin-top:32px">
+        <div class="sech"><div class="sect" id="head-new">🚨 Off-rota order types</div></div>
+        <div style="font-size:12px;color:var(--mu);margin-bottom:12px;line-height:1.7">
+          These locums made decisions on order types <strong>outside their rota assignment</strong>.
+          They are contracted to work on Complex Repeats, Simple Repeats, and Periodic Reviews only.
+          Working on Starter Doses or Transfer Patient orders is a compliance issue —
+          on the <strong>first offence</strong> a formal warning is issued; on the <strong>second offence</strong> the locum is immediately offboarded.
+        </div>
         <div class="tw"><table><thead><tr>
-          <th>Name</th>
-          <th class="r">New order decisions</th>
-          <th>Order types</th>
-          <th>Offence count</th>
-          <th>Action</th>
+          <th>Name</th><th class="r">Off-rota decisions</th><th>Order types</th><th>Offence history</th><th>Action</th>
         </tr></thead><tbody id="tb-sum-new"></tbody></table></div>
       </div>
 
-      <!-- Productivity outliers -->
-      <div class="sec">
-        <div class="sech"><div class="sect">📊 Productivity Outliers — time per order review &gt;75th percentile</div></div>
-        <div style="font-size:11px;color:var(--mu);margin-bottom:10px">Benchmarks: Complex = 8 mins/order, Simple = 2.5 mins/order. Outliers flagged above 75th percentile of the group.</div>
-        <div class="tw"><table><thead><tr>
-          <th>Name</th>
-          <th class="r">Total decisions</th>
-          <th class="r">TS hours</th>
-          <th class="r">Mins / order</th>
-          <th>vs benchmark</th>
-          <th>Action</th>
-        </tr></thead><tbody id="tb-sum-prod"></tbody></table></div>
-      </div>
-
-      <!-- Prescribe rate -->
-      <div class="sec">
-        <div class="sech"><div class="sect">💊 Prescribe Rate — deviations from benchmark</div></div>
-        <div style="font-size:11px;color:var(--mu);margin-bottom:10px">Benchmarks: Complex ≥60%, Simple ≥98%. Flagged where below benchmark.</div>
+      <!-- 4. Prescribe rate -->
+      <div class="sec" style="margin-top:32px">
+        <div class="sech"><div class="sect" id="head-pres">💊 Prescribe rate below benchmark</div></div>
+        <div style="font-size:12px;color:var(--mu);margin-bottom:12px;line-height:1.7">
+          The prescribe rate is the proportion of orders a locum approves (prescribes) out of all orders they reviewed.
+          Internal benchmarks are <strong>≥60% for Complex Repeats</strong> (including 6-Month Reviews) and <strong>≥98% for Simple Repeats</strong>.
+          A low prescribe rate — particularly on Simple Repeats where the vast majority should be straightforward — may indicate
+          excessive caution, inconsistent clinical judgement, or deliberate deflection of decisions via holds.
+          Only locums below benchmark on at least one order type are shown.
+        </div>
         <div class="tw"><table><thead><tr>
           <th>Name</th>
           <th class="r">Complex rate</th>
           <th class="r">Simple rate</th>
-          <th class="r">Overall rate</th>
+          <th class="r">Total decisions</th>
           <th>Flag</th>
           <th>Action</th>
         </tr></thead><tbody id="tb-sum-pres"></tbody></table></div>
       </div>
 
-      <!-- Hold & rejection rate -->
-      <div class="sec">
-        <div class="sech"><div class="sect">⏸ Hold &amp; Rejection Rate outliers</div></div>
-        <div style="font-size:11px;color:var(--mu);margin-bottom:10px">Outliers flagged above 75th percentile of the group for each metric.</div>
+      <!-- 5. High hold rate -->
+      <div class="sec" style="margin-top:32px">
+        <div class="sech"><div class="sect" id="head-hold">⏸ High hold rate</div></div>
+        <div style="font-size:12px;color:var(--mu);margin-bottom:12px;line-height:1.7">
+          A "hold" means the locum did not make a final prescribing decision on an order — they flagged it for further review instead.
+          While some holds are clinically appropriate, a <strong>consistently high hold rate relative to peers</strong> can indicate
+          a locum is avoiding decisions rather than completing their work. Flagged where hold rate exceeds the
+          <strong>75th percentile of the group</strong> this week, with a minimum of 5 decisions reviewed.
+        </div>
         <div class="tw"><table><thead><tr>
           <th>Name</th>
           <th class="r">Hold rate</th>
-          <th class="r">Rejection rate</th>
+          <th class="r">Orders held</th>
           <th class="r">Total decisions</th>
-          <th>Flag</th>
+          <th>Group 75th pct</th>
           <th>Action</th>
         </tr></thead><tbody id="tb-sum-hold"></tbody></table></div>
       </div>
@@ -1242,6 +1279,50 @@ function runImport() {
     var mname=Object.values(days)[0].member;
     var key=actName.replace(/[.#$/\[\]]/g,'_');
 
+    // ── Per-day timing breakdown with hour-by-hour grid ────────────────────
+    var dayTiming = [];
+    Object.entries(days).forEach(function(dp) {
+      var day = dp[0]; var d = dp[1];
+      var dayHrs = Math.round((d.stop - d.start) / 360000) / 10;
+      if (dayHrs < 0.5) return; // skip ghost sessions under 30 min
+
+      // Shift hours (integer hours covered by the timesheet session)
+      var shiftStart = d.start.getHours();
+      var shiftEnd   = Math.min(d.stop.getHours() + (d.stop.getMinutes()>0?1:0), 24);
+      var shiftHours = {};
+      for (var h = shiftStart; h < shiftEnd; h++) shiftHours[h] = true;
+
+      // Decision hours for this person on this day within the shift
+      var dayEvts = actEvents.filter(function(e){
+        return e.actName === actName && e.ts >= d.start && e.ts <= d.stop;
+      });
+      var decisionHoursSet = {};
+      dayEvts.forEach(function(e){ decisionHoursSet[e.ts.getHours()] = true; });
+
+      // Hour grid: for each shift hour, active or inactive
+      var hourGrid = {};
+      var activeHrs = 0;
+      Object.keys(shiftHours).forEach(function(h) {
+        var hNum = parseInt(h);
+        var status = decisionHoursSet[hNum] ? 'active' : 'inactive';
+        hourGrid[hNum] = status;
+        if (status === 'active') activeHrs++;
+      });
+
+      var inactiveHrs = Math.round(Math.max(0, dayHrs - activeHrs) * 10) / 10;
+      var varPct = dayHrs > 0 ? Math.round(inactiveHrs / dayHrs * 100) : 0;
+
+      dayTiming.push({
+        date: day,
+        ts_start: fmtTime(d.start), ts_end: fmtTime(d.stop),
+        ts_hrs: dayHrs,
+        active_hrs: activeHrs,
+        inactive_hrs: inactiveHrs,
+        hour_grid: hourGrid,
+        flagged: inactiveHrs > 0 && varPct >= 20 && dayHrs >= 2
+      });
+    });
+
     results[key] = {
       name:mname, provider:provider,
       ts_hrs:Math.round(totalHrs*10)/10,
@@ -1252,6 +1333,7 @@ function runImport() {
       gap_start:gapStart, gap_end:gapEnd,
       ts_start:tsStart?fmtTime(tsStart):null, ts_end:tsEnd?fmtTime(tsEnd):null,
       first_act:firstAct?fmtTime(firstAct):null, last_act:lastAct?fmtTime(lastAct):null,
+      day_timing:dayTiming,
       flag:flag
     };
 
@@ -1376,173 +1458,296 @@ function esc(str) {
 // ─── WEEKLY SUMMARY ───────────────────────────────────────────────────────────
 function loadSummary(weekId) {
   if (!weekId) return;
-  document.getElementById('sum-sub').textContent = 'Loading…';
+  document.getElementById('sum-sub').textContent = 'Loading\u2026';
   document.getElementById('sum-wsel').value = weekId;
 
   db.ref('weeks/' + weekId).once('value', function(snap) {
     var week = snap.val();
     if (!week) { document.getElementById('sum-sub').textContent = 'No data for this week.'; return; }
     document.getElementById('sum-sub').textContent = week.label || weekId;
-
     var locums = Object.values(week.locums || {});
+    var weekLabel = week.label || weekId;
 
-    // ── 1. TIMESHEET vs ACTIVITY ──────────────────────────────────────────────
-    var tsRows = locums.filter(function(l) {
-      return l.ts_hrs > 0 && (l.first_act || l.last_act);
-    }).map(function(l) {
-      // Parse HH:MM strings to fractional hours
-      function toHrs(t) {
-        if (!t) return null;
-        var p = t.split(':');
-        return parseInt(p[0]) + parseInt(p[1])/60;
+    // ── 1. NO TIMESHEET ────────────────────────────────────────────────────────
+    var noTs = locums.filter(function(l){ return l.flag === 'no_timesheet'; });
+    var notsTbody = document.getElementById('tb-sum-nots');
+    document.getElementById('head-nots').innerHTML = '\u26d4 No timesheet logged' +
+      (noTs.length ? '<span class="issue-count">'+noTs.length+'</span>' : '');
+
+    notsTbody.innerHTML = noTs.length ? noTs.map(function(l) {
+      var types = (l.breach_types||[]).concat(l.complex?['Complex Repeats']:[]).concat(l.simple?['Simple Repeats']:[]).join(', ') || '\u2014';
+      return '<tr><td><strong>'+esc(l.name)+'</strong></td>' +
+        '<td class="r">'+(l.complex+l.simple+l.breach)+'</td>' +
+        '<td class="dim" style="font-size:11px">'+(l.first_act||'\u2014')+'</td>' +
+        '<td class="dim" style="font-size:11px">'+esc(types)+'</td></tr>';
+    }).join('') : '<tr><td colspan="4" style="text-align:center;color:var(--mu);padding:16px">None this week \u2713</td></tr>';
+
+    // ── 2. HOURS DISCREPANCY (uses day_timing stored at import) ───────────────
+    // Build per-person summary from day_timing
+    var discrepancy = [];
+    locums.forEach(function(l) {
+      if (!l.day_timing || l.ts_hrs === 0) return;
+      var days = l.day_timing;
+      var totalLogged   = 0;
+      var totalActive   = 0;
+      var totalInactive = 0;
+      var flaggedDays   = [];
+
+      days.forEach(function(d) {
+        totalLogged   += d.ts_hrs || 0;
+        totalActive   += d.active_hrs || 0;
+        totalInactive += d.inactive_hrs || 0;
+        if (d.inactive_hrs && d.inactive_hrs > 0 && (d.ts_hrs > 0) &&
+            (d.inactive_hrs / d.ts_hrs > 0.20) && d.ts_hrs >= 2) {
+          flaggedDays.push(d);
+        }
+      });
+
+      var variancePct = totalLogged > 0 ? Math.round(totalInactive / totalLogged * 100) : 0;
+      if (variancePct >= 20 && flaggedDays.length > 0) {
+        discrepancy.push({
+          name: l.name,
+          logged: Math.round(totalLogged * 10) / 10,
+          active: Math.round(totalActive * 10) / 10,
+          inactive: Math.round(totalInactive * 10) / 10,
+          adjusted: Math.round(Math.max(0, totalLogged - totalInactive) * 10) / 10,
+          variancePct: variancePct,
+          flaggedDays: flaggedDays
+        });
       }
-      var tsS = toHrs(l.ts_start), tsE = toHrs(l.ts_end);
-      var acS = toHrs(l.first_act), acE = toHrs(l.last_act);
-      // Handle overnight sessions
-      if (tsE !== null && tsS !== null && tsE < tsS) tsE += 24;
-      if (acE !== null && acS !== null && acE < acS) acE += 24;
-      var activeHrs = (acS !== null && acE !== null) ? Math.max(0, acE - acS) : null;
-      var inactiveHrs = (activeHrs !== null) ? Math.max(0, l.ts_hrs - activeHrs) : null;
-      var adjHrs = (activeHrs !== null) ? activeHrs : l.ts_hrs;
-      return {
-        name: l.name,
-        ts_hrs: l.ts_hrs,
-        active_hrs: activeHrs !== null ? Math.round(activeHrs * 10) / 10 : null,
-        inactive_hrs: inactiveHrs !== null ? Math.round(inactiveHrs * 10) / 10 : null,
-        adj_hrs: Math.round(adjHrs * 10) / 10,
-        ts_window: (l.ts_start && l.ts_end) ? l.ts_start + ' – ' + l.ts_end : '—',
-        act_window: (l.first_act && l.last_act) ? l.first_act + ' – ' + l.last_act : '—',
-        gap: inactiveHrs || 0
-      };
-    }).filter(function(r){ return r.gap > 0.5; }) // only show if >30min gap
-     .sort(function(a,b){ return b.gap - a.gap; });
+    });
+    discrepancy.sort(function(a,b){ return b.inactive - a.inactive; });
+    document.getElementById('head-ts').innerHTML = '\u23f1 Hours discrepancy' +
+      (discrepancy.length ? '<span class="issue-count">'+discrepancy.length+'</span>' : '');
 
     var tsTbody = document.getElementById('tb-sum-ts');
-    tsTbody.innerHTML = tsRows.length ? tsRows.map(function(r) {
-      var inactiveBadge = r.inactive_hrs > 2
-        ? '<span class="badge br">' + r.inactive_hrs + ' hrs</span>'
-        : '<span class="badge ba">' + r.inactive_hrs + ' hrs</span>';
-      return '<tr><td>' + esc(r.name) + '</td>' +
-        '<td class="r">' + r.ts_hrs.toFixed(1) + '</td>' +
-        '<td class="r">' + (r.active_hrs !== null ? r.active_hrs.toFixed(1) : '—') + '</td>' +
-        '<td class="r">' + inactiveBadge + '</td>' +
-        '<td class="r"><strong>' + r.adj_hrs.toFixed(1) + '</strong></td>' +
-        '<td style="font-variant-numeric:tabular-nums;font-size:12px">' + r.ts_window + '</td>' +
-        '<td style="font-variant-numeric:tabular-nums;font-size:12px;color:var(--ac2)">' + r.act_window + '</td>' +
-        '</tr>';
-    }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:20px">No significant gaps this week</td></tr>';
+    if (!discrepancy.length) {
+      tsTbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:16px">No significant discrepancies this week \u2713</td></tr>';
+    } else {
+      tsTbody.innerHTML = discrepancy.map(function(p, pi) {
+        var inactCls = p.variancePct >= 50 ? 'br' : 'ba';
+        var detailId = 'ts-detail-' + pi;
+        // Day rows with hour grids
+        var dayHtml = p.flaggedDays.map(function(d, di) {
+          var gridId = 'hg-' + pi + '-' + di;
+          // Build hour grid
+          var gridHtml = '';
+          if (d.hour_grid) {
+            var hours = Object.keys(d.hour_grid).map(Number).sort(function(a,b){return a-b;});
+            gridHtml = '<div class="hgrid" id="'+gridId+'">' +
+              hours.map(function(h) {
+                var status = d.hour_grid[h];
+                var cls = status === 'active' ? 'hcell hcell-active' : 'hcell hcell-inactive';
+                var label = h < 10 ? '0'+h : ''+h;
+                return '<div class="'+cls+'" title="'+label+':00 \u2014 '+(status==='active'?'active':'no decisions')+'">'+label+'</div>';
+              }).join('') + '</div>';
+          }
+          var varD = d.inactive_hrs && d.ts_hrs ? Math.round(d.inactive_hrs/d.ts_hrs*100) : 0;
+          return '<div style="padding:10px 0 10px;border-bottom:1px solid var(--bd)">' +
+            '<div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px">' +
+            '<span style="font-size:12px;font-weight:500">'+d.date+'</span>' +
+            '<span style="font-size:11px;color:var(--mu)">'+
+              'Logged '+d.ts_start+'\u2013'+d.ts_end+' ('+d.ts_hrs+'h) &nbsp;\u00b7&nbsp; '+
+              '<span style="color:var(--gr)">'+d.active_hrs+' active hrs</span>'+
+              ' &nbsp;\u00b7&nbsp; <span style="color:var(--re)">'+d.inactive_hrs+' inactive hrs ('+varD+'%)</span>'+
+            '</span></div>' +
+            '<div style="font-size:10px;color:var(--mu);margin-bottom:4px">Each cell = 1 hour. Green = decision made. Red = clocked in, no decisions.</div>' +
+            gridHtml + '</div>';
+        }).join('');
 
-    // ── 2. OUTCOMES DATA (from outcomes sub-key in Firebase) ──────────────────
+        return '<tr onclick="toggleDetail(\''+detailId+'\')" style="cursor:pointer">' +
+          '<td><strong>'+esc(p.name)+'</strong> <span style="font-size:10px;color:var(--ac)">\u25be expand</span></td>' +
+          '<td class="r">'+p.logged.toFixed(1)+'</td>' +
+          '<td class="r" style="color:var(--gr)">'+p.active.toFixed(1)+'</td>' +
+          '<td class="r"><span class="badge '+inactCls+'">'+p.inactive.toFixed(1)+' hrs ('+p.variancePct+'%)</span></td>' +
+          '<td class="r" style="font-weight:500">'+p.adjusted.toFixed(1)+'</td>' +
+          '<td class="r">'+p.flaggedDays.length+' day'+(p.flaggedDays.length!==1?'s':'')+'</td>' +
+          '</tr>' +
+          '<tr id="'+detailId+'" style="display:none"><td colspan="6" style="padding:0">' +
+          '<div style="padding:4px 16px 0">'+dayHtml+'</div>' +
+          '</td></tr>';
+      }).join('');
+    }
+
+    // ── 3. OUTCOMES (from Firebase outcomes node) ──────────────────────────────
     db.ref('outcomes/' + weekId).once('value', function(oSnap) {
       var outcomes = oSnap.val() || {};
       var oArr = Object.values(outcomes);
 
-      // ── NEW ORDER WORKERS ────────────────────────────────────────────────────
+      // ── OFF-ROTA ORDERS ────────────────────────────────────────────────────
       var newOrderWorkers = oArr.filter(function(o){ return (o.new_order_decisions||0) > 0; });
+      document.getElementById('head-new').innerHTML = '\ud83d\udea8 Off-rota order types' +
+        (newOrderWorkers.length ? '<span class="issue-count">'+newOrderWorkers.length+'</span>' : '');
 
-      // Cross-reference with feedback to count prior offences
       db.ref('feedback').once('value', function(fbSnap) {
         var fbData = fbSnap.val() || {};
         var offenceCount = {};
         Object.values(fbData).forEach(function(fb) {
-          if (fb.type === 'new_order') {
-            offenceCount[fb.name] = (offenceCount[fb.name] || 0) + 1;
-          }
+          if (fb.type === 'new_order') offenceCount[fb.name] = (offenceCount[fb.name]||0)+1;
         });
 
         var newTbody = document.getElementById('tb-sum-new');
         newTbody.innerHTML = newOrderWorkers.length ? newOrderWorkers.map(function(o) {
           var prior = offenceCount[o.name] || 0;
-          var offenceBadge = prior >= 1
-            ? '<span class="badge br">⚠ 2nd offence — offboard</span>'
-            : '<span class="badge ba">1st offence — warn</span>';
-          var types = (o.new_order_types || []).join(', ') || '—';
-          var actionBtn = prior >= 1
-            ? '<button class="btn btnxs btnd" onclick="openFbModal(\'' + esc(o.name) + '\')">Log offboarding</button>'
-            : '<button class="btn btnxs" onclick="logNewOrderWarning(\'' + esc(o.name) + '\',\'' + esc(weekId) + '\')">Log warning</button>';
-          return '<tr><td><strong>' + esc(o.name) + '</strong></td>' +
-            '<td class="r"><span class="badge br">' + o.new_order_decisions + '</span></td>' +
-            '<td style="font-size:11px;color:var(--mu)">' + esc(types) + '</td>' +
-            '<td>' + offenceBadge + '</td>' +
-            '<td>' + actionBtn + '</td></tr>';
-        }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--mu);padding:20px">No new order activity this week ✓</td></tr>';
+          var badge = prior >= 1
+            ? '<span class="badge br">\u26a0 2nd offence \u2014 offboard</span>'
+            : '<span class="badge ba">1st offence \u2014 warn</span>';
+          var types = (o.new_order_types||[]).join(', ') || '\u2014';
+          var btn = prior >= 1
+            ? '<button class="btn btnxs btnd" onclick="openFbModal(\''+esc(o.name)+'\')">Log offboarding</button>'
+            : '<button class="btn btnxs" onclick="logNewOrderWarning(\''+esc(o.name)+'\',\''+esc(weekId)+'\')">Log warning</button>';
+          return '<tr><td><strong>'+esc(o.name)+'</strong></td>' +
+            '<td class="r"><span class="badge br">'+o.new_order_decisions+'</span></td>' +
+            '<td style="font-size:11px;color:var(--mu)">'+esc(types)+'</td>' +
+            '<td>'+badge+'</td><td>'+btn+'</td></tr>';
+        }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--mu);padding:16px">None this week \u2713</td></tr>';
 
-        // ── PRODUCTIVITY OUTLIERS ────────────────────────────────────────────
-        var prodArr = oArr.filter(function(o){ return o.mins_per_order && o.ts_hrs > 0; });
-        var mpos = prodArr.map(function(o){ return o.mins_per_order; }).sort(function(a,b){return a-b;});
-        var p75 = mpos.length ? mpos[Math.floor(mpos.length * 0.75)] : 999;
-        var outliers = prodArr.filter(function(o){ return o.mins_per_order > p75; })
-          .sort(function(a,b){ return b.mins_per_order - a.mins_per_order; });
-
-        var prodTbody = document.getElementById('tb-sum-prod');
-        prodTbody.innerHTML = outliers.length ? outliers.map(function(o) {
-          // Determine benchmark based on dominant type
-          var benchmark = o.dominant === 'simple' ? 2.5 : 8;
-          var ratio = o.mins_per_order / benchmark;
-          var ratioStr = ratio.toFixed(1) + '× benchmark (' + benchmark + ' min)';
-          var cls = ratio > 3 ? 'br' : 'ba';
-          return '<tr><td>' + esc(o.name) + '</td>' +
-            '<td class="r">' + (o.total_decisions||0) + '</td>' +
-            '<td class="r">' + o.ts_hrs.toFixed(1) + '</td>' +
-            '<td class="r"><span class="badge ' + cls + '">' + o.mins_per_order.toFixed(1) + ' min</span></td>' +
-            '<td style="font-size:11px;color:var(--mu)">' + ratioStr + '</td>' +
-            '<td>' + fbBtn(o.name) + '</td></tr>';
-        }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:20px">No productivity outliers this week ✓</td></tr>';
-
-        // ── PRESCRIBE RATE ───────────────────────────────────────────────────
-        var presArr = oArr.filter(function(o){ return o.total_decisions > 0; })
-          .sort(function(a,b){ return (a.pres_rate_complex||100) - (b.pres_rate_complex||100); });
+        // ── PRESCRIBE RATE ──────────────────────────────────────────────────
+        var presArr = oArr.filter(function(o){ return o.total_decisions >= 3; });
+        var presFlagged = presArr.filter(function(o){
+          return (o.pres_rate_complex !== null && o.pres_rate_complex < 60) ||
+                 (o.pres_rate_simple  !== null && o.pres_rate_simple  < 98);
+        }).sort(function(a,b){
+          var aMin = Math.min(a.pres_rate_complex||100, a.pres_rate_simple||100);
+          var bMin = Math.min(b.pres_rate_complex||100, b.pres_rate_simple||100);
+          return aMin - bMin;
+        });
+        document.getElementById('head-pres').innerHTML = '\ud83d\udc8a Prescribe rate below benchmark' +
+          (presFlagged.length ? '<span class="issue-count">'+presFlagged.length+'</span>' : '');
 
         var presTbody = document.getElementById('tb-sum-pres');
-        presTbody.innerHTML = presArr.length ? presArr.map(function(o) {
-          var cxFlag = (o.pres_rate_complex !== null && o.pres_rate_complex < 60);
-          var sxFlag = (o.pres_rate_simple  !== null && o.pres_rate_simple  < 98);
-          if (!cxFlag && !sxFlag) return ''; // only show flagged
+        presTbody.innerHTML = presFlagged.length ? presFlagged.map(function(o) {
+          var cxFlag = o.pres_rate_complex !== null && o.pres_rate_complex < 60;
+          var sxFlag = o.pres_rate_simple  !== null && o.pres_rate_simple  < 98;
           var flags = [];
-          if (cxFlag) flags.push('<span class="badge ba">Complex below 60%</span>');
-          if (sxFlag) flags.push('<span class="badge br">Simple below 98%</span>');
-          var cxVal = o.pres_rate_complex !== null ? o.pres_rate_complex + '%' : '—';
-          var sxVal = o.pres_rate_simple  !== null ? o.pres_rate_simple  + '%' : '—';
-          var cxCls = cxFlag ? 'color:var(--am)' : 'color:var(--gr)';
-          var sxCls = sxFlag ? 'color:var(--re)' : 'color:var(--gr)';
-          return '<tr><td>' + esc(o.name) + '</td>' +
-            '<td class="r" style="' + cxCls + '">' + cxVal + '</td>' +
-            '<td class="r" style="' + sxCls + '">' + sxVal + '</td>' +
-            '<td class="r">' + (o.pres_rate||0) + '%</td>' +
-            '<td>' + flags.join(' ') + '</td>' +
-            '<td>' + fbBtn(o.name) + '</td></tr>';
-        }).filter(Boolean).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:20px">All prescribe rates within benchmark ✓</td></tr>'
-        : '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:20px">No outcomes data for this week — import outcomes CSV to see rates.</td></tr>';
+          if (cxFlag) flags.push('<span class="badge '+(o.pres_rate_complex<40?'br':'ba')+'">Complex below '+(o.pres_rate_complex<40?'40':'60')+'%</span>');
+          if (sxFlag) flags.push('<span class="badge '+(o.pres_rate_simple<80?'br':'ba')+'">Simple below '+(o.pres_rate_simple<80?'80':'98')+'%</span>');
+          var cxStr = o.pres_rate_complex !== null ? o.pres_rate_complex+'%' : '\u2014';
+          var sxStr = o.pres_rate_simple  !== null ? o.pres_rate_simple+'%'  : '\u2014';
+          var cxStyle = cxFlag ? 'color:var(--'+(o.pres_rate_complex<40?'re':'am')+')' : 'color:var(--gr)';
+          var sxStyle = sxFlag ? 'color:var(--'+(o.pres_rate_simple<80?'re':'am')+')'  : 'color:var(--gr)';
+          return '<tr><td>'+esc(o.name)+'</td>' +
+            '<td class="r" style="'+cxStyle+'"><strong>'+cxStr+'</strong> <span style="font-size:10px;color:var(--mu)">/ 60%</span></td>' +
+            '<td class="r" style="'+sxStyle+'"><strong>'+sxStr+'</strong> <span style="font-size:10px;color:var(--mu)">/ 98%</span></td>' +
+            '<td class="r">'+o.total_decisions+'</td>' +
+            '<td>'+flags.join(' ')+'</td>' +
+            '<td>'+fbBtn(o.name)+'</td></tr>';
+        }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:16px">All prescribe rates within benchmark \u2713</td></tr>';
 
-        // ── HOLD & REJECTION RATES ───────────────────────────────────────────
-        var holdArr = oArr.filter(function(o){ return o.total_decisions >= 3; });
-        var holdVals = holdArr.map(function(o){ return o.hold_rate||0; }).sort(function(a,b){return a-b;});
-        var rejVals  = holdArr.map(function(o){ return o.rej_rate||0; }).sort(function(a,b){return a-b;});
-        var p75hold = holdVals.length ? holdVals[Math.floor(holdVals.length*0.75)] : 999;
-        var p75rej  = rejVals.length  ? rejVals[Math.floor(rejVals.length*0.75)]   : 999;
-
-        var holdOutliers = holdArr.filter(function(o){
-          return (o.hold_rate||0) > p75hold || (o.rej_rate||0) > p75rej;
-        }).sort(function(a,b){ return (b.hold_rate||0)+(b.rej_rate||0) - ((a.hold_rate||0)+(a.rej_rate||0)); });
+        // ── HIGH HOLD RATE ──────────────────────────────────────────────────
+        var holdArr = oArr.filter(function(o){ return o.total_decisions >= 5; });
+        var holdRates = holdArr.map(function(o){ return o.hold_rate||0; }).sort(function(a,b){return a-b;});
+        var p75hold = holdRates.length ? holdRates[Math.floor(holdRates.length*0.75)] : 999;
+        var holdFlagged = holdArr.filter(function(o){ return (o.hold_rate||0) > p75hold; })
+          .sort(function(a,b){ return (b.hold_rate||0)-(a.hold_rate||0); });
+        document.getElementById('head-hold').innerHTML = '\u23f8 High hold rate' +
+          (holdFlagged.length ? '<span class="issue-count">'+holdFlagged.length+'</span>' : '');
 
         var holdTbody = document.getElementById('tb-sum-hold');
-        holdTbody.innerHTML = holdOutliers.length ? holdOutliers.map(function(o) {
-          var hFlag = (o.hold_rate||0) > p75hold;
-          var rFlag = (o.rej_rate||0)  > p75rej;
-          var flags = [];
-          if (hFlag) flags.push('<span class="badge ba">High hold rate</span>');
-          if (rFlag) flags.push('<span class="badge br">High rejection rate</span>');
-          var hCls = hFlag ? 'color:var(--am)' : '';
-          var rCls = rFlag ? 'color:var(--re)' : '';
-          return '<tr><td>' + esc(o.name) + '</td>' +
-            '<td class="r" style="' + hCls + '">' + (o.hold_rate||0) + '%</td>' +
-            '<td class="r" style="' + rCls + '">' + (o.rej_rate||0) + '%</td>' +
-            '<td class="r">' + (o.total_decisions||0) + '</td>' +
-            '<td>' + flags.join(' ') + '</td>' +
-            '<td>' + fbBtn(o.name) + '</td></tr>';
-        }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:20px">No hold or rejection rate outliers this week ✓</td></tr>';
+        holdTbody.innerHTML = holdFlagged.length ? holdFlagged.map(function(o) {
+          return '<tr><td>'+esc(o.name)+'</td>' +
+            '<td class="r" style="color:var(--am)"><strong>'+(o.hold_rate||0)+'%</strong></td>' +
+            '<td class="r">'+(o.on_hold||0)+'</td>' +
+            '<td class="r">'+o.total_decisions+'</td>' +
+            '<td style="font-size:11px;color:var(--mu)">Group 75th pct: '+Math.round(p75hold)+'%</td>' +
+            '<td>'+fbBtn(o.name)+'</td></tr>';
+        }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:16px">No hold rate outliers this week \u2713</td></tr>';
+
+        // ── TOTAL ISSUE COUNT BANNER ────────────────────────────────────────
+        var totalIssues = noTs.length + discrepancy.length + newOrderWorkers.length + presFlagged.length + holdFlagged.length;
+        var banner = document.getElementById('sum-banner');
+        if (totalIssues > 0) {
+          banner.style.display = 'flex';
+          document.getElementById('sum-banner-text').textContent =
+            totalIssues + ' issue' + (totalIssues!==1?'s':'') + ' requiring attention across ' +
+            new Set([].concat(
+              noTs.map(function(l){return l.name;}),
+              discrepancy.map(function(p){return p.name;}),
+              newOrderWorkers.map(function(o){return o.name;}),
+              presFlagged.map(function(o){return o.name;}),
+              holdFlagged.map(function(o){return o.name;})
+            )).size + ' locums this week';
+        } else {
+          banner.style.display = 'none';
+        }
+
+        // ── STORE FOR COPY FUNCTION ────────────────────────────────────────
+        window._sumData = { weekLabel:weekLabel, noTs:noTs, discrepancy:discrepancy,
+          newOrderWorkers:newOrderWorkers, presFlagged:presFlagged, holdFlagged:holdFlagged,
+          p75hold:Math.round(p75hold) };
       });
     });
+  });
+}
+
+function toggleDetail(id) {
+  var el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'table-row' : 'none';
+}
+
+function copyAgencySummary() {
+  var d = window._sumData;
+  if (!d) { showToast('Load a week first','error'); return; }
+  var lines = [
+    'LOCUM AUDIT SUMMARY \u2014 ' + d.weekLabel,
+    '='.repeat(50),
+    ''
+  ];
+
+  if (d.noTs.length) {
+    lines.push('\u26d4 NO TIMESHEET LOGGED (' + d.noTs.length + ' locum' + (d.noTs.length!==1?'s':'') + ')');
+    lines.push('The following locums had clinical activity recorded but submitted no Hubstaff timesheet:');
+    d.noTs.forEach(function(l){ lines.push('  \u2022 ' + l.name + ' (' + (l.complex+l.simple+l.breach) + ' decisions)'); });
+    lines.push('');
+  }
+
+  if (d.discrepancy.length) {
+    var totalInactive = d.discrepancy.reduce(function(s,p){return s+p.inactive;},0);
+    lines.push('\u23f1 HOURS DISCREPANCY (' + d.discrepancy.length + ' locum' + (d.discrepancy.length!==1?'s':'') + ')');
+    lines.push('The following locums have a significant gap between their logged hours and their actual clinical activity hours:');
+    d.discrepancy.forEach(function(p){
+      lines.push('  \u2022 ' + p.name + ': logged ' + p.logged.toFixed(1) + 'h, active ' + p.active.toFixed(1) + 'h, inactive ' + p.inactive.toFixed(1) + 'h (' + p.variancePct + '% variance). Adjusted hrs to pay: ' + p.adjusted.toFixed(1) + 'h');
+    });
+    lines.push('Total inactive hours across flagged locums: ' + totalInactive.toFixed(1) + 'h');
+    lines.push('');
+  }
+
+  if (d.newOrderWorkers.length) {
+    lines.push('\ud83d\udea8 OFF-ROTA ORDER TYPES (' + d.newOrderWorkers.length + ' locum' + (d.newOrderWorkers.length!==1?'s':'') + ')');
+    lines.push('The following locums worked on order types outside their rota assignment:');
+    d.newOrderWorkers.forEach(function(o){
+      lines.push('  \u2022 ' + o.name + ': ' + o.new_order_decisions + ' decisions on ' + (o.new_order_types||[]).join(', '));
+    });
+    lines.push('');
+  }
+
+  if (d.presFlagged.length) {
+    lines.push('\ud83d\udc8a PRESCRIBE RATE BELOW BENCHMARK (' + d.presFlagged.length + ' locum' + (d.presFlagged.length!==1?'s':'') + ')');
+    lines.push('Benchmarks: Complex \u226560%, Simple \u226598%');
+    d.presFlagged.forEach(function(o){
+      var cx = o.pres_rate_complex !== null ? 'Complex: ' + o.pres_rate_complex + '%' : '';
+      var sx = o.pres_rate_simple  !== null ? 'Simple: '  + o.pres_rate_simple  + '%' : '';
+      lines.push('  \u2022 ' + o.name + ': ' + [cx,sx].filter(Boolean).join(', ') + ' (' + o.total_decisions + ' decisions reviewed)');
+    });
+    lines.push('');
+  }
+
+  if (d.holdFlagged.length) {
+    lines.push('\u23f8 HIGH HOLD RATE (' + d.holdFlagged.length + ' locum' + (d.holdFlagged.length!==1?'s':'') + ')');
+    lines.push('Group 75th percentile hold rate: ' + d.p75hold + '%. The following exceed this:');
+    d.holdFlagged.forEach(function(o){
+      lines.push('  \u2022 ' + o.name + ': ' + (o.hold_rate||0) + '% hold rate (' + (o.on_hold||0) + ' of ' + o.total_decisions + ' orders held)');
+    });
+    lines.push('');
+  }
+
+  if (lines.length <= 3) lines.push('No issues requiring attention this week.');
+
+  var text = lines.join('\n');
+  navigator.clipboard.writeText(text).then(function(){
+    showToast('Summary copied to clipboard','success');
+  }).catch(function(){
+    showToast('Copy failed \u2014 try a different browser','error');
   });
 }
 
