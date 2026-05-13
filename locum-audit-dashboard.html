@@ -1193,8 +1193,23 @@ function runImport() {
   var actEvents = actRows.map(function(r) {
     var tsStr = r['Date Time: Hour'] || r['Date Time: Minute'] || '';
     var ts = null;
-    var m = tsStr.match(/(\w+ \d+, \d+), (\d+:\d+)/);
-    if (m) ts = new Date(m[1]+' '+m[2]);
+    var m = tsStr.match(/(\w+) (\d+), (\d+), (\d+:\d+)/);
+    if (m) {
+      var months = {January:0,February:1,March:2,April:3,May:4,June:5,
+                   July:6,August:7,September:8,October:9,November:10,December:11};
+      var mo = months[m[1]];
+      var dd = parseInt(m[2]);
+      var yyyy = parseInt(m[3]);
+      var parts = m[4].split(':');
+      var hh = parseInt(parts[0]); var mm2 = parseInt(parts[1]);
+      if (mo !== undefined) {
+        // Build as UK local time (BST = UTC+1 in summer, GMT = UTC in winter)
+        // Use a fixed +01:00 offset matching Hubstaff exports (BST period)
+        var isoStr = yyyy+'-'+(mo+1<10?'0':'')+(mo+1)+'-'+(dd<10?'0':'')+dd+
+          'T'+(hh<10?'0':'')+hh+':'+(mm2<10?'0':'')+mm2+':00+01:00';
+        ts = new Date(isoStr);
+      }
+    }
     var email = (r['Email']||'').toLowerCase().trim();
     var cat   = r[CAT_COL] || '';
     var event = r['Event'] || '';
@@ -1287,8 +1302,10 @@ function runImport() {
       if (dayHrs < 0.5) return; // skip ghost sessions under 30 min
 
       // Shift hours (integer hours covered by the timesheet session)
-      var shiftStart = d.start.getHours();
-      var shiftEnd   = Math.min(d.stop.getHours() + (d.stop.getMinutes()>0?1:0), 24);
+      // Extract UK local hour from UTC: Hubstaff times are +01:00 (BST)
+      var shiftStart = (d.start.getUTCHours() + 1) % 24;
+      var shiftStopH = (d.stop.getUTCHours() + 1) % 24;
+      var shiftEnd   = Math.min(shiftStopH + (d.stop.getUTCMinutes()>0?1:0), 24);
       var shiftHours = {};
       for (var h = shiftStart; h < shiftEnd; h++) shiftHours[h] = true;
 
@@ -1297,7 +1314,7 @@ function runImport() {
         return e.actName === actName && e.ts >= d.start && e.ts <= d.stop;
       });
       var decisionHoursSet = {};
-      dayEvts.forEach(function(e){ decisionHoursSet[e.ts.getHours()] = true; });
+      dayEvts.forEach(function(e){ decisionHoursSet[(e.ts.getUTCHours()+1)%24] = true; });
 
       // Hour grid: for each shift hour, active or inactive
       var hourGrid = {};
