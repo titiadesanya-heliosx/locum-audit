@@ -593,7 +593,7 @@ input[type=file]{display:none}
 
 // ─── FIREBASE CONFIG — replace these with your own values ─────────────────────
 var firebaseConfig = {
-  apiKey: "AIzaSyCeBwCdFOqhHDGHkb4GAcEJJiXAomeanKw",
+ apiKey: "AIzaSyCeBwCdFOqhHDGHkb4GAcEJJiXAomeanKw",
   authDomain: "medexpress-locum-audit.firebaseapp.com",
   databaseURL: "https://medexpress-locum-audit-default-rtdb.europe-west1.firebasedatabase.app",
   projectId: "medexpress-locum-audit",
@@ -1295,7 +1295,7 @@ function runImport() {
     var key=actName.replace(/[.#$/\[\]]/g,'_');
 
     // ── Per-day timing breakdown with hour-by-hour grid ────────────────────
-    var dayTiming = [];
+    var dayTiming = {};
     Object.entries(days).forEach(function(dp) {
       var day = dp[0]; var d = dp[1];
       var dayHrs = Math.round((d.stop - d.start) / 360000) / 10;
@@ -1329,7 +1329,7 @@ function runImport() {
       var inactiveHrs = Math.round(Math.max(0, dayHrs - activeHrs) * 10) / 10;
       var varPct = dayHrs > 0 ? Math.round(inactiveHrs / dayHrs * 100) : 0;
 
-      dayTiming.push({
+      dayTiming[day] = {
         date: day,
         ts_start: fmtTime(d.start), ts_end: fmtTime(d.stop),
         ts_hrs: dayHrs,
@@ -1337,7 +1337,7 @@ function runImport() {
         inactive_hrs: inactiveHrs,
         hour_grid: hourGrid,
         flagged: inactiveHrs > 0 && varPct >= 20 && dayHrs >= 2
-      });
+      };
     });
 
     results[key] = {
@@ -1504,7 +1504,10 @@ function loadSummary(weekId) {
     var discrepancy = [];
     locums.forEach(function(l) {
       if (!l.day_timing || l.ts_hrs === 0) return;
-      var days = l.day_timing;
+      // Firebase stores arrays as objects with integer keys - convert back
+      var days = Array.isArray(l.day_timing)
+        ? l.day_timing
+        : Object.values(l.day_timing);
       var totalLogged   = 0;
       var totalActive   = 0;
       var totalInactive = 0;
