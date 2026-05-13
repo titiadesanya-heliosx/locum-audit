@@ -236,6 +236,7 @@ input[type=file]{display:none}
       <div class="navsec">Monitor</div>
       <div class="ni active" id="ni-dashboard" onclick="navigate('dashboard')"><span class="ni-ic">▦</span> Dashboard</div>
       <div class="ni" id="ni-performers" onclick="navigate('performers')"><span class="ni-ic">★</span> Top Performers</div>
+      <div class="ni" id="ni-summary" onclick="navigate('summary')"><span class="ni-ic">◈</span> Weekly Summary</div>
       <div class="navsec">Manage</div>
       <div class="ni" id="ni-feedback" onclick="navigate('feedback')"><span class="ni-ic">◎</span> Feedback Tracker</div>
       <div class="ni" id="ni-offenders" onclick="navigate('offenders')"><span class="ni-ic">⚠</span> Repeat Offenders</div>
@@ -259,21 +260,21 @@ input[type=file]{display:none}
         <div class="mc"><div class="ml">Locums logged</div><div class="mv" id="m-total">—</div></div>
         <div class="mc"><div class="ml">No timesheet</div><div class="mv red" id="m-nots">—</div></div>
         <div class="mc"><div class="ml">Zero activity</div><div class="mv red" id="m-zero">—</div></div>
-        <div class="mc"><div class="ml">Rota breach</div><div class="mv amber" id="m-breach">—</div></div>
+        <div class="mc"><div class="ml">Off-rota orders</div><div class="mv amber" id="m-breach">—</div></div>
         <div class="mc"><div class="ml">Severe (&lt;20%)</div><div class="mv amber" id="m-severe">—</div></div>
         <div class="mc"><div class="ml">Median orders/hr</div><div class="mv green" id="m-median">—</div></div>
       </div>
       <div class="sec">
         <div class="sech"><div class="sect">⛔ No Timesheet — active but no hours logged</div></div>
-        <div class="tw"><table><thead><tr><th>Name</th><th class="r">Complex orders</th><th class="r">Simple orders</th><th class="r">Rota breach orders</th><th>Action</th></tr></thead><tbody id="tb-nots"></tbody></table></div>
+        <div class="tw"><table><thead><tr><th>Name</th><th class="r">Complex orders</th><th class="r">Simple orders</th><th class="r">Off-rota orders</th><th>Action</th></tr></thead><tbody id="tb-nots"></tbody></table></div>
       </div>
       <div class="sec">
         <div class="sech"><div class="sect">🔴 Zero Activity — no clinical events during logged hours</div></div>
         <div class="tw"><table><thead><tr><th>Name</th><th class="r">TS Hrs</th><th class="r">Dominant type</th><th class="r">Expected</th><th>Action</th></tr></thead><tbody id="tb-zero"></tbody></table></div>
       </div>
       <div class="sec">
-        <div class="sech"><div class="sect">🚨 Rota Breach — working on order types outside their rota</div></div>
-        <div class="tw"><table><thead><tr><th>Name</th><th class="r">Breach orders</th><th class="r">Breach types</th><th class="r">Rota orders</th><th>Action</th></tr></thead><tbody id="tb-breach"></tbody></table></div>
+        <div class="sech"><div class="sect">🚨 Off-rota orders — working on order types not assigned to them</div></div>
+        <div class="tw"><table><thead><tr><th>Name</th><th class="r">Off-rota orders</th><th class="r">Order types</th><th class="r">Assigned orders</th><th>Action</th></tr></thead><tbody id="tb-breach"></tbody></table></div>
       </div>
       <div class="sec">
         <div class="sech"><div class="sect">🟡 Severe Discrepancy — orders &lt;20% of expected rate</div></div>
@@ -342,14 +343,100 @@ input[type=file]{display:none}
       </div>
     </div>
 
-    <div id="page-import" class="page">
+    <div id="page-summary" class="page">
+      <div class="ph">
+        <div><div class="pt">Weekly Summary</div><div class="ps" id="sum-sub">Select a week to load the summary.</div></div>
+        <div class="wsel"><label>Week:</label>
+          <select id="sum-wsel" onchange="loadSummary(this.value)"></select>
+        </div>
+      </div>
+
+      <!-- Timesheet vs Activity -->
+      <div class="sec">
+        <div class="sech">
+          <div class="sect">⏱ Timesheet vs Activity — paid hours with no clinical activity</div>
+        </div>
+        <div class="tw"><table><thead><tr>
+          <th>Name</th>
+          <th class="r">Clocked hrs</th>
+          <th class="r">Active hrs</th>
+          <th class="r">Inactive hrs paid</th>
+          <th class="r">Adjusted hrs to pay</th>
+          <th>Timesheet window</th>
+          <th>Activity window</th>
+        </tr></thead><tbody id="tb-sum-ts"></tbody></table></div>
+      </div>
+
+      <!-- New orders warning -->
+      <div class="sec">
+        <div class="sech"><div class="sect">🚨 New Order Activity — locums not assigned to new orders</div></div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:10px">1st offence = warning flag. 2nd offence = immediate offboarding.</div>
+        <div class="tw"><table><thead><tr>
+          <th>Name</th>
+          <th class="r">New order decisions</th>
+          <th>Order types</th>
+          <th>Offence count</th>
+          <th>Action</th>
+        </tr></thead><tbody id="tb-sum-new"></tbody></table></div>
+      </div>
+
+      <!-- Productivity outliers -->
+      <div class="sec">
+        <div class="sech"><div class="sect">📊 Productivity Outliers — time per order review &gt;75th percentile</div></div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:10px">Benchmarks: Complex = 8 mins/order, Simple = 2.5 mins/order. Outliers flagged above 75th percentile of the group.</div>
+        <div class="tw"><table><thead><tr>
+          <th>Name</th>
+          <th class="r">Total decisions</th>
+          <th class="r">TS hours</th>
+          <th class="r">Mins / order</th>
+          <th>vs benchmark</th>
+          <th>Action</th>
+        </tr></thead><tbody id="tb-sum-prod"></tbody></table></div>
+      </div>
+
+      <!-- Prescribe rate -->
+      <div class="sec">
+        <div class="sech"><div class="sect">💊 Prescribe Rate — deviations from benchmark</div></div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:10px">Benchmarks: Complex ≥60%, Simple ≥98%. Flagged where below benchmark.</div>
+        <div class="tw"><table><thead><tr>
+          <th>Name</th>
+          <th class="r">Complex rate</th>
+          <th class="r">Simple rate</th>
+          <th class="r">Overall rate</th>
+          <th>Flag</th>
+          <th>Action</th>
+        </tr></thead><tbody id="tb-sum-pres"></tbody></table></div>
+      </div>
+
+      <!-- Hold & rejection rate -->
+      <div class="sec">
+        <div class="sech"><div class="sect">⏸ Hold &amp; Rejection Rate outliers</div></div>
+        <div style="font-size:11px;color:var(--mu);margin-bottom:10px">Outliers flagged above 75th percentile of the group for each metric.</div>
+        <div class="tw"><table><thead><tr>
+          <th>Name</th>
+          <th class="r">Hold rate</th>
+          <th class="r">Rejection rate</th>
+          <th class="r">Total decisions</th>
+          <th>Flag</th>
+          <th>Action</th>
+        </tr></thead><tbody id="tb-sum-hold"></tbody></table></div>
+      </div>
+    </div>
+
+        <div id="page-import" class="page">
       <div class="ph">
         <div><div class="pt">Import Weekly Data</div><div class="ps">Drop in both CSV exports. Analysis runs automatically.</div></div>
       </div>
-      <div style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px 20px;margin-bottom:24px;font-size:12px;color:var(--mu);line-height:1.8">
-        <strong style="color:var(--tx)">Two files needed:</strong><br>
-        <strong style="color:var(--ac)">1.</strong> Clinical events time breakdown — from Looker. Columns: Date Time: Minute, Order URL, Event, Email, Count.<br>
-        <strong style="color:var(--ac)">2.</strong> Work sessions report — from Toggl. Columns: Member, Started, Stopped, Manual, Date.
+      <div style="background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:16px 20px;margin-bottom:24px;font-size:12px;color:var(--mu);line-height:2">
+        <strong style="color:var(--tx)">Download this week's data first, then upload below:</strong><br>
+        <strong style="color:var(--ac)">1.</strong> Prescriber activity (Looker) →
+          <a href="https://metabase.heliosx.co/question/69858-previous-week-locum-activity-independent-prescribers" target="_blank"
+             style="color:var(--ac2);text-decoration:none;border-bottom:1px solid var(--ac2)">Open in Metabase ↗</a><br>
+        <strong style="color:var(--ac)">2.</strong> Hubstaff timesheets →
+          <a href="https://app.hubstaff.com/reports/12549/team/work_sessions?date=2026-05-04&date_end=2026-05-10&group_by=date&filters%5Bteams%5D%5B%5D=team%3A215961&filters%5Bprojects%5D=&filters%5Btasks%5D=&filters%5Bclients%5D=&filters%5Bactivity_level%5D=&filters%5Btime_types%5D=&filters%5Bclient_types%5D=&filters%5Binclude_archived%5D=true&filters%5Bshow_manual%5D=true&filters%5Bshow_client%5D=true&filters%5Bshow_projects%5D=true&filters%5Bshow_tasks%5D=true&filters%5Bshow_started%5D=true&filters%5Bshow_stopped%5D=true&filters%5Bshow_duration%5D=true&filters%5Bshow_activity%5D=true&filters%5Bshow_notes%5D=false" target="_blank"
+             style="color:var(--ac2);text-decoration:none;border-bottom:1px solid var(--ac2)">Open in Hubstaff ↗</a>
+          <span style="font-size:10px;margin-left:6px;opacity:0.6">(update dates before exporting)</span><br>
+        <strong style="color:var(--ac)">3.</strong> Prescriber outcomes (Looker) — optional, needed for prescribe/hold/reject rates
       </div>
       <div class="igrid">
         <div class="icard">
@@ -368,6 +455,14 @@ input[type=file]{display:none}
           </div>
           <input type="file" id="ts-file" accept=".csv" onchange="handleFile(event,'timesheet')">
         </div>
+      </div>
+      <div class="icard" style="margin-bottom:24px">
+        <div class="ict">Outcomes CSV <span class="badge bm" style="vertical-align:middle;margin-left:6px">optional</span></div>
+        <div class="icd">Prescriber activity report from Looker — prescribed / on hold / rejected per clinician</div>
+        <div class="ua" id="out-drop" onclick="document.getElementById('out-file').click()" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="handleDrop(event,'outcomes')">
+          <div class="uaicon">⬇</div><div class="ualabel">Click or drag CSV here</div><div class="uaname" id="out-fname"></div>
+        </div>
+        <input type="file" id="out-file" accept=".csv" onchange="handleFile(event,'outcomes')">
       </div>
       <div class="fr2" style="max-width:700px">
         <div><label>Week label (e.g. "13–19 Apr 2026")</label><input type="text" id="imp-label" placeholder="13–19 Apr 2026"></div>
@@ -440,26 +535,15 @@ input[type=file]{display:none}
 <script>
 
 // ─── FIREBASE CONFIG — replace these with your own values ─────────────────────
-const firebaseConfig = {
-
-  apiKey: "AIzaSyCeBwCdFOqhHDGHkb4GAcEJJiXAomeanKw",
-
-  authDomain: "medexpress-locum-audit.firebaseapp.com",
-
-  databaseURL: "https://medexpress-locum-audit-default-rtdb.europe-west1.firebasedatabase.app",
-
-  projectId: "medexpress-locum-audit",
-
-  storageBucket: "medexpress-locum-audit.firebasestorage.app",
-
-  messagingSenderId: "397202189507",
-
-  appId: "1:397202189507:web:2a95b5066f65284a3e0676",
-
-  measurementId: "G-ETSY0DHDGF"
-
-}
-
+var firebaseConfig = {
+  apiKey:            "REPLACE_WITH_YOUR_API_KEY",
+  authDomain:        "REPLACE_WITH_YOUR_AUTH_DOMAIN",
+  databaseURL:       "REPLACE_WITH_YOUR_DATABASE_URL",
+  projectId:         "REPLACE_WITH_YOUR_PROJECT_ID",
+  storageBucket:     "REPLACE_WITH_YOUR_STORAGE_BUCKET",
+  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
+  appId:             "REPLACE_WITH_YOUR_APP_ID"
+};
 
 var db, auth;
 try {
@@ -485,6 +569,7 @@ var currentWeekId = '';
 var statusEditId  = null;
 var activityCSV   = null;
 var timesheetCSV  = null;
+var outcomesCSV   = null;
 
 // ─── CONNECTION STATUS ────────────────────────────────────────────────────────
 db.ref('.info/connected').on('value', function(snap) {
@@ -507,6 +592,7 @@ function navigate(page) {
   if (pageEl) pageEl.classList.add('active');
   if (niEl)   niEl.classList.add('active');
   if (page === 'feedback' || page === 'offenders') loadFeedback();
+  if (page === 'summary') loadSummary(document.getElementById('sum-wsel').value);
   if (page === 'history') loadHistory();
 }
 
@@ -515,7 +601,7 @@ function loadWeeks() {
   db.ref('weeks').once('value', function(snap) {
     var weeks = snap.val() || {};
     var ids = Object.keys(weeks).sort().reverse();
-    ['dash-wsel', 'perf-wsel'].forEach(function(selId) {
+    ['dash-wsel', 'perf-wsel', 'sum-wsel'].forEach(function(selId) {
       var sel = document.getElementById(selId);
       sel.innerHTML = '';
       ids.forEach(function(id) {
@@ -653,7 +739,7 @@ function fillNoTs(id, rows) {
   var tbody = document.getElementById(id);
   if (!rows.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--mu);padding:20px">None this week</td></tr>'; return; }
   tbody.innerHTML = rows.sort(function(a,b){return (b.breach||0)-(a.breach||0);}).map(function(l){
-    var breachBadge = (l.breach||0)>0 ? ' <span class="badge br">'+l.breach+' breach orders</span>' : '';
+    var breachBadge = (l.breach||0)>0 ? ' <span class="badge br">'+l.breach+' off-rota orders</span>' : '';
     return '<tr><td>'+esc(l.name)+breachBadge+'</td><td class="r">'+(l.complex||0)+'</td><td class="r">'+(l.simple||0)+'</td><td class="r"><span class="badge br">'+(l.breach||0)+'</span></td><td>'+fbBtn(l.name)+'</td></tr>';
   }).join('');
 }
@@ -935,10 +1021,14 @@ function handleFile(event, type) {
       activityCSV = e.target.result;
       document.getElementById('act-fname').textContent = '✓ ' + file.name;
       document.getElementById('act-drop').classList.add('loaded');
-    } else {
+    } else if (type === 'timesheet') {
       timesheetCSV = e.target.result;
       document.getElementById('ts-fname').textContent = '✓ ' + file.name;
       document.getElementById('ts-drop').classList.add('loaded');
+    } else {
+      outcomesCSV = e.target.result;
+      document.getElementById('out-fname').textContent = '✓ ' + file.name;
+      document.getElementById('out-drop').classList.add('loaded');
     }
   };
   reader.readAsText(file);
@@ -953,10 +1043,11 @@ function handleDrop(event, type) {
 }
 
 function clearImport() {
-  activityCSV = null; timesheetCSV = null;
-  ['act-drop','ts-drop'].forEach(function(id){ document.getElementById(id).classList.remove('loaded'); });
+  activityCSV = null; timesheetCSV = null; outcomesCSV = null;
+  ['act-drop','ts-drop','out-drop'].forEach(function(id){ document.getElementById(id).classList.remove('loaded'); });
   document.getElementById('act-fname').textContent = '';
   document.getElementById('ts-fname').textContent  = '';
+  document.getElementById('out-fname').textContent = '';
   document.getElementById('imp-status').classList.remove('vis');
   document.getElementById('imp-preview').innerHTML = '';
 }
@@ -1196,13 +1287,82 @@ function runImport() {
   var brC    = Object.values(results).filter(function(r){return r.flag==='breach';}).length;
   var sevC   = Object.values(results).filter(function(r){return r.flag==='severe';}).length;
   addSt('Analysis complete: '+count+' locums processed','ok');
-  addSt('Flags: '+notsC+' no timesheet, '+zeroC+' zero activity, '+brC+' rota breach, '+sevC+' severe',(notsC+zeroC+brC+sevC)>0?'warn':'ok');
+  addSt('Flags: '+notsC+' no timesheet, '+zeroC+' zero activity, '+brC+' off-rota orders, '+sevC+' severe',(notsC+zeroC+brC+sevC)>0?'warn':'ok');
   addSt('Saving to Firebase…','wait');
 
   db.ref('weeks/'+weekId).set({label:weekLabel, provider:provider, importedAt:Date.now(), locums:results}, function() {
-    addSt('Saved successfully!','ok');
+    addSt('Saved to Firebase!','ok');
     showToast('Week '+weekLabel+' imported — '+count+' locums','success');
     loadWeeks(); loadWeek(weekId); loadPerformers(weekId);
+
+    // ── Parse and save outcomes CSV if provided ──────────────────────────────
+    if (outcomesCSV) {
+      addSt('Parsing outcomes CSV…','wait');
+      var outRows;
+      try { outRows = parseCSV(outcomesCSV); addSt('Parsed '+outRows.length+' outcome rows','ok'); }
+      catch(e) { addSt('Outcomes CSV parse error: '+e.message,'err'); outRows = null; }
+
+      if (outRows) {
+        var CAT_COL = 'Orders Weight Loss Glp1 - Order → Order Category';
+        var NEW_ORDER_CATS = {'New Orders Starter Dose':1,'New Orders Transfer Patient':1};
+        var COMPLEX_CATS   = {'Complex Repeat':1,'6 Month Review':1};
+        var SIMPLE_CATS    = {'Simple Repeat':1};
+
+        // Build per-person stats
+        var opByName = {};
+        outRows.forEach(function(r) {
+          var email = (r['Email']||'').toLowerCase().trim();
+          var name  = emailToName(email);
+          var event = r['Event']||'';
+          var cat   = r[CAT_COL]||'';
+          if (!opByName[name]) opByName[name] = {name:name, decisions:[], new_order_types:{}};
+          opByName[name].decisions.push({event:event, cat:cat});
+          if (NEW_ORDER_CATS[cat]) opByName[name].new_order_types[cat] = 1;
+        });
+
+        var outResults = {};
+        Object.values(opByName).forEach(function(p) {
+          var d = p.decisions;
+          var total   = d.length;
+          var pres    = d.filter(function(x){return x.event==='prescribed';}).length;
+          var hold    = d.filter(function(x){return x.event==='on_hold_reason_added';}).length;
+          var rej     = d.filter(function(x){return x.event==='rejection';}).length;
+          var presC   = d.filter(function(x){return x.event==='prescribed'&&COMPLEX_CATS[x.cat];}).length;
+          var presS   = d.filter(function(x){return x.event==='prescribed'&&SIMPLE_CATS[x.cat];}).length;
+          var totC    = d.filter(function(x){return COMPLEX_CATS[x.cat];}).length;
+          var totS    = d.filter(function(x){return SIMPLE_CATS[x.cat];}).length;
+          var newOrd  = d.filter(function(x){return NEW_ORDER_CATS[x.cat];}).length;
+          // Productivity from timesheet cross-ref
+          var tsMatch = results[p.name.replace(/[.#$\/\[\]]/g,'_')];
+          var tsHrs   = tsMatch ? tsMatch.ts_hrs : null;
+          var minsPerOrder = (tsHrs && total>0) ? Math.round(tsHrs*60/total*10)/10 : null;
+          var dominant = (tsMatch && tsMatch.dominant) || (totC>=totS?'complex':'simple');
+          outResults[p.name.replace(/[.#$\/\[\]]/g,'_')] = {
+            name: p.name,
+            total_decisions: total,
+            prescribed: pres, on_hold: hold, rejected: rej,
+            pres_rate:         total>0 ? Math.round(pres/total*100*10)/10 : null,
+            hold_rate:         total>0 ? Math.round(hold/total*100*10)/10 : null,
+            rej_rate:          total>0 ? Math.round(rej/total*100*10)/10  : null,
+            pres_rate_complex: totC>0  ? Math.round(presC/totC*100*10)/10 : null,
+            pres_rate_simple:  totS>0  ? Math.round(presS/totS*100*10)/10 : null,
+            new_order_decisions: newOrd,
+            new_order_types: Object.keys(p.new_order_types),
+            mins_per_order: minsPerOrder,
+            ts_hrs: tsHrs,
+            dominant: dominant
+          };
+        });
+
+        db.ref('outcomes/'+weekId).set(outResults, function() {
+          addSt('Outcomes saved — '+Object.keys(outResults).length+' clinicians','ok');
+          showToast('Outcomes data saved','success');
+        });
+      }
+    } else {
+      addSt('No outcomes CSV provided — skipping prescribe/hold/reject analysis','wait');
+    }
+
     var preview = Object.values(results)
       .filter(function(r){ return r.flag==='no_timesheet'||r.flag==='zero'||r.flag==='breach'||r.flag==='severe'; })
       .sort(function(a,b){ var fo={no_timesheet:0,zero:1,breach:2,severe:3}; return (fo[a.flag]||9)-(fo[b.flag]||9); })
@@ -1211,7 +1371,7 @@ function runImport() {
       '<div class="sech" style="margin-bottom:12px"><div class="sect">Preview — flagged locums</div></div>'+
       '<div class="tw"><table><thead><tr><th>Name</th><th>Flag</th><th class="r">TS hrs</th><th>Dominant</th><th class="r">Rota orders</th><th class="r">Expected</th><th>Rate</th></tr></thead><tbody>'+
       preview.map(function(r){
-        var fb = {no_timesheet:'<span class="badge br">No timesheet</span>',zero:'<span class="badge br">Zero activity</span>',breach:'<span class="badge ba">Rota breach</span>',severe:'<span class="badge ba">Severe</span>'};
+        var fb = {no_timesheet:'<span class="badge br">No timesheet</span>',zero:'<span class="badge br">Zero activity</span>',breach:'<span class="badge ba">Off-rota</span>',severe:'<span class="badge ba">Severe</span>'};
         return '<tr><td>'+esc(r.name)+'</td><td>'+(fb[r.flag]||'')+'</td><td class="r">'+r.ts_hrs+'</td><td>'+domBadge(r.dominant)+'</td><td class="r">'+(r.total_rota||0)+'</td><td class="r dim">'+r.expected+'</td><td>'+rateBar(r.pct)+'</td></tr>';
       }).join('')+
       '</tbody></table></div>';
@@ -1231,6 +1391,191 @@ function esc(str) {
   return (str||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
+
+
+// ─── WEEKLY SUMMARY ───────────────────────────────────────────────────────────
+function loadSummary(weekId) {
+  if (!weekId) return;
+  document.getElementById('sum-sub').textContent = 'Loading…';
+  document.getElementById('sum-wsel').value = weekId;
+
+  db.ref('weeks/' + weekId).once('value', function(snap) {
+    var week = snap.val();
+    if (!week) { document.getElementById('sum-sub').textContent = 'No data for this week.'; return; }
+    document.getElementById('sum-sub').textContent = week.label || weekId;
+
+    var locums = Object.values(week.locums || {});
+
+    // ── 1. TIMESHEET vs ACTIVITY ──────────────────────────────────────────────
+    var tsRows = locums.filter(function(l) {
+      return l.ts_hrs > 0 && (l.first_act || l.last_act);
+    }).map(function(l) {
+      // Parse HH:MM strings to fractional hours
+      function toHrs(t) {
+        if (!t) return null;
+        var p = t.split(':');
+        return parseInt(p[0]) + parseInt(p[1])/60;
+      }
+      var tsS = toHrs(l.ts_start), tsE = toHrs(l.ts_end);
+      var acS = toHrs(l.first_act), acE = toHrs(l.last_act);
+      // Handle overnight sessions
+      if (tsE !== null && tsS !== null && tsE < tsS) tsE += 24;
+      if (acE !== null && acS !== null && acE < acS) acE += 24;
+      var activeHrs = (acS !== null && acE !== null) ? Math.max(0, acE - acS) : null;
+      var inactiveHrs = (activeHrs !== null) ? Math.max(0, l.ts_hrs - activeHrs) : null;
+      var adjHrs = (activeHrs !== null) ? activeHrs : l.ts_hrs;
+      return {
+        name: l.name,
+        ts_hrs: l.ts_hrs,
+        active_hrs: activeHrs !== null ? Math.round(activeHrs * 10) / 10 : null,
+        inactive_hrs: inactiveHrs !== null ? Math.round(inactiveHrs * 10) / 10 : null,
+        adj_hrs: Math.round(adjHrs * 10) / 10,
+        ts_window: (l.ts_start && l.ts_end) ? l.ts_start + ' – ' + l.ts_end : '—',
+        act_window: (l.first_act && l.last_act) ? l.first_act + ' – ' + l.last_act : '—',
+        gap: inactiveHrs || 0
+      };
+    }).filter(function(r){ return r.gap > 0.5; }) // only show if >30min gap
+     .sort(function(a,b){ return b.gap - a.gap; });
+
+    var tsTbody = document.getElementById('tb-sum-ts');
+    tsTbody.innerHTML = tsRows.length ? tsRows.map(function(r) {
+      var inactiveBadge = r.inactive_hrs > 2
+        ? '<span class="badge br">' + r.inactive_hrs + ' hrs</span>'
+        : '<span class="badge ba">' + r.inactive_hrs + ' hrs</span>';
+      return '<tr><td>' + esc(r.name) + '</td>' +
+        '<td class="r">' + r.ts_hrs.toFixed(1) + '</td>' +
+        '<td class="r">' + (r.active_hrs !== null ? r.active_hrs.toFixed(1) : '—') + '</td>' +
+        '<td class="r">' + inactiveBadge + '</td>' +
+        '<td class="r"><strong>' + r.adj_hrs.toFixed(1) + '</strong></td>' +
+        '<td style="font-variant-numeric:tabular-nums;font-size:12px">' + r.ts_window + '</td>' +
+        '<td style="font-variant-numeric:tabular-nums;font-size:12px;color:var(--ac2)">' + r.act_window + '</td>' +
+        '</tr>';
+    }).join('') : '<tr><td colspan="7" style="text-align:center;color:var(--mu);padding:20px">No significant gaps this week</td></tr>';
+
+    // ── 2. OUTCOMES DATA (from outcomes sub-key in Firebase) ──────────────────
+    db.ref('outcomes/' + weekId).once('value', function(oSnap) {
+      var outcomes = oSnap.val() || {};
+      var oArr = Object.values(outcomes);
+
+      // ── NEW ORDER WORKERS ────────────────────────────────────────────────────
+      var newOrderWorkers = oArr.filter(function(o){ return (o.new_order_decisions||0) > 0; });
+
+      // Cross-reference with feedback to count prior offences
+      db.ref('feedback').once('value', function(fbSnap) {
+        var fbData = fbSnap.val() || {};
+        var offenceCount = {};
+        Object.values(fbData).forEach(function(fb) {
+          if (fb.type === 'new_order') {
+            offenceCount[fb.name] = (offenceCount[fb.name] || 0) + 1;
+          }
+        });
+
+        var newTbody = document.getElementById('tb-sum-new');
+        newTbody.innerHTML = newOrderWorkers.length ? newOrderWorkers.map(function(o) {
+          var prior = offenceCount[o.name] || 0;
+          var offenceBadge = prior >= 1
+            ? '<span class="badge br">⚠ 2nd offence — offboard</span>'
+            : '<span class="badge ba">1st offence — warn</span>';
+          var types = (o.new_order_types || []).join(', ') || '—';
+          var actionBtn = prior >= 1
+            ? '<button class="btn btnxs btnd" onclick="openFbModal(\'' + esc(o.name) + '\')">Log offboarding</button>'
+            : '<button class="btn btnxs" onclick="logNewOrderWarning(\'' + esc(o.name) + '\',\'' + esc(weekId) + '\')">Log warning</button>';
+          return '<tr><td><strong>' + esc(o.name) + '</strong></td>' +
+            '<td class="r"><span class="badge br">' + o.new_order_decisions + '</span></td>' +
+            '<td style="font-size:11px;color:var(--mu)">' + esc(types) + '</td>' +
+            '<td>' + offenceBadge + '</td>' +
+            '<td>' + actionBtn + '</td></tr>';
+        }).join('') : '<tr><td colspan="5" style="text-align:center;color:var(--mu);padding:20px">No new order activity this week ✓</td></tr>';
+
+        // ── PRODUCTIVITY OUTLIERS ────────────────────────────────────────────
+        var prodArr = oArr.filter(function(o){ return o.mins_per_order && o.ts_hrs > 0; });
+        var mpos = prodArr.map(function(o){ return o.mins_per_order; }).sort(function(a,b){return a-b;});
+        var p75 = mpos.length ? mpos[Math.floor(mpos.length * 0.75)] : 999;
+        var outliers = prodArr.filter(function(o){ return o.mins_per_order > p75; })
+          .sort(function(a,b){ return b.mins_per_order - a.mins_per_order; });
+
+        var prodTbody = document.getElementById('tb-sum-prod');
+        prodTbody.innerHTML = outliers.length ? outliers.map(function(o) {
+          // Determine benchmark based on dominant type
+          var benchmark = o.dominant === 'simple' ? 2.5 : 8;
+          var ratio = o.mins_per_order / benchmark;
+          var ratioStr = ratio.toFixed(1) + '× benchmark (' + benchmark + ' min)';
+          var cls = ratio > 3 ? 'br' : 'ba';
+          return '<tr><td>' + esc(o.name) + '</td>' +
+            '<td class="r">' + (o.total_decisions||0) + '</td>' +
+            '<td class="r">' + o.ts_hrs.toFixed(1) + '</td>' +
+            '<td class="r"><span class="badge ' + cls + '">' + o.mins_per_order.toFixed(1) + ' min</span></td>' +
+            '<td style="font-size:11px;color:var(--mu)">' + ratioStr + '</td>' +
+            '<td>' + fbBtn(o.name) + '</td></tr>';
+        }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:20px">No productivity outliers this week ✓</td></tr>';
+
+        // ── PRESCRIBE RATE ───────────────────────────────────────────────────
+        var presArr = oArr.filter(function(o){ return o.total_decisions > 0; })
+          .sort(function(a,b){ return (a.pres_rate_complex||100) - (b.pres_rate_complex||100); });
+
+        var presTbody = document.getElementById('tb-sum-pres');
+        presTbody.innerHTML = presArr.length ? presArr.map(function(o) {
+          var cxFlag = (o.pres_rate_complex !== null && o.pres_rate_complex < 60);
+          var sxFlag = (o.pres_rate_simple  !== null && o.pres_rate_simple  < 98);
+          if (!cxFlag && !sxFlag) return ''; // only show flagged
+          var flags = [];
+          if (cxFlag) flags.push('<span class="badge ba">Complex below 60%</span>');
+          if (sxFlag) flags.push('<span class="badge br">Simple below 98%</span>');
+          var cxVal = o.pres_rate_complex !== null ? o.pres_rate_complex + '%' : '—';
+          var sxVal = o.pres_rate_simple  !== null ? o.pres_rate_simple  + '%' : '—';
+          var cxCls = cxFlag ? 'color:var(--am)' : 'color:var(--gr)';
+          var sxCls = sxFlag ? 'color:var(--re)' : 'color:var(--gr)';
+          return '<tr><td>' + esc(o.name) + '</td>' +
+            '<td class="r" style="' + cxCls + '">' + cxVal + '</td>' +
+            '<td class="r" style="' + sxCls + '">' + sxVal + '</td>' +
+            '<td class="r">' + (o.pres_rate||0) + '%</td>' +
+            '<td>' + flags.join(' ') + '</td>' +
+            '<td>' + fbBtn(o.name) + '</td></tr>';
+        }).filter(Boolean).join('') || '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:20px">All prescribe rates within benchmark ✓</td></tr>'
+        : '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:20px">No outcomes data for this week — import outcomes CSV to see rates.</td></tr>';
+
+        // ── HOLD & REJECTION RATES ───────────────────────────────────────────
+        var holdArr = oArr.filter(function(o){ return o.total_decisions >= 3; });
+        var holdVals = holdArr.map(function(o){ return o.hold_rate||0; }).sort(function(a,b){return a-b;});
+        var rejVals  = holdArr.map(function(o){ return o.rej_rate||0; }).sort(function(a,b){return a-b;});
+        var p75hold = holdVals.length ? holdVals[Math.floor(holdVals.length*0.75)] : 999;
+        var p75rej  = rejVals.length  ? rejVals[Math.floor(rejVals.length*0.75)]   : 999;
+
+        var holdOutliers = holdArr.filter(function(o){
+          return (o.hold_rate||0) > p75hold || (o.rej_rate||0) > p75rej;
+        }).sort(function(a,b){ return (b.hold_rate||0)+(b.rej_rate||0) - ((a.hold_rate||0)+(a.rej_rate||0)); });
+
+        var holdTbody = document.getElementById('tb-sum-hold');
+        holdTbody.innerHTML = holdOutliers.length ? holdOutliers.map(function(o) {
+          var hFlag = (o.hold_rate||0) > p75hold;
+          var rFlag = (o.rej_rate||0)  > p75rej;
+          var flags = [];
+          if (hFlag) flags.push('<span class="badge ba">High hold rate</span>');
+          if (rFlag) flags.push('<span class="badge br">High rejection rate</span>');
+          var hCls = hFlag ? 'color:var(--am)' : '';
+          var rCls = rFlag ? 'color:var(--re)' : '';
+          return '<tr><td>' + esc(o.name) + '</td>' +
+            '<td class="r" style="' + hCls + '">' + (o.hold_rate||0) + '%</td>' +
+            '<td class="r" style="' + rCls + '">' + (o.rej_rate||0) + '%</td>' +
+            '<td class="r">' + (o.total_decisions||0) + '</td>' +
+            '<td>' + flags.join(' ') + '</td>' +
+            '<td>' + fbBtn(o.name) + '</td></tr>';
+        }).join('') : '<tr><td colspan="6" style="text-align:center;color:var(--mu);padding:20px">No hold or rejection rate outliers this week ✓</td></tr>';
+      });
+    });
+  });
+}
+
+function logNewOrderWarning(name, weekId) {
+  var loggedBy = document.getElementById('user-sel') ? document.getElementById('user-sel').value : 'Titi';
+  var today    = new Date().toISOString().split('T')[0];
+  db.ref('feedback').push({
+    name: name, week: weekId, type: 'new_order',
+    notes: 'New order activity detected during rota audit for week ' + weekId + '. Locum not assigned to new orders.',
+    status: 'open', loggedBy: loggedBy, createdAt: Date.now(),
+    history: [{date: today, note: 'Auto-logged: new order activity detected in week ' + weekId, status: 'open'}]
+  }, function() { showToast('Warning logged for ' + name, 'success'); });
+}
 
 // ─── 6-WEEK HISTORY ───────────────────────────────────────────────────────────
 function loadHistory() {
